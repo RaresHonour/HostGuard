@@ -13,7 +13,7 @@ A BepInEx/Reactor mod for Among Us that gives hosts better control over their lo
 
 ## Requirements
 
-- Among Us (Steam) v2026.3.17
+- Among Us (Steam, I don't know if works for Epic Games) v2026.3.17
 - [BepInEx 6.0.0-be.755 (IL2CPP x86)](https://builds.bepinex.dev/projects/bepinex_be)
 - [Reactor 2.5.0](https://github.com/NuclearPowered/Reactor/releases)
 
