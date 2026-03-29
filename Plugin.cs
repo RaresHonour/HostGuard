@@ -18,5 +18,8 @@ public class HostGuardPlugin : BasePlugin
         _harmony = new Harmony("com.rareshonour.hostguard");
         _harmony.PatchAll();
         Logger.LogInfo("HostGuard 1.2.0 loaded.");
+        Logger.LogInfo($"[HostGuard] Config: BanInsteadOfKick={HostGuardConfig.BanInsteadOfKick.Value}, ContainsMode={HostGuardConfig.ContainsMode.Value}, AnnounceKick={HostGuardConfig.AnnounceKick.Value}");
+        Logger.LogInfo($"[HostGuard] Config: BannedWords=[{HostGuardConfig.BannedWords.Value}], BadNameWords=[{HostGuardConfig.BadNameWords.Value}]");
+        Logger.LogInfo($"[HostGuard] Config: Whitelist=[{HostGuardConfig.WhitelistedCodes.Value}], BanListUrl={(!string.IsNullOrEmpty(HostGuardConfig.BanListUrl.Value) ? "set" : "not set")}");
     }
 }

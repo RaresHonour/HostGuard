@@ -13,7 +13,13 @@ public static class JoinPatch
         string name = data.PlayerName;
         string code = data.FriendCode;
 
-        if (HostGuardConfig.GetWhitelistedCodes().Contains(code)) return;
+        HostGuardPlugin.Logger.LogInfo($"[HostGuard] Player joined: {name} ({code}) [ID: {data.Id}]");
+
+        if (HostGuardConfig.GetWhitelistedCodes().Contains(code))
+        {
+            HostGuardPlugin.Logger.LogInfo($"[HostGuard] Whitelist bypass: {name} ({code})");
+            return;
+        }
 
         _ = CheckBanListAsync(data, name, code);
 
@@ -33,6 +39,7 @@ public static class JoinPatch
     static async System.Threading.Tasks.Task CheckBanListAsync(ClientData data, string name, string code)
     {
         var banned = await BanListManager.FetchBannedCodesAsync();
+        HostGuardPlugin.Logger.LogInfo($"[HostGuard] Ban list loaded: {banned.Count} codes");
         if (banned.Contains(code))
         {
             HostGuardPlugin.Logger.LogWarning($"[HostGuard] Banning {name} ({code}) — found in ban list.");

@@ -11,6 +11,12 @@
 *.sln.docstates
 *.env
 
+# JetBrains Rider
+.idea/
+
+# Claude Code
+.claude/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
