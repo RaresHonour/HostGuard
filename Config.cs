@@ -17,7 +17,7 @@ public static class HostGuardConfig
     public static void Initialize(ConfigFile config)
     {
         BannedWords = config.Bind(
-            "AutoBan", "BannedWords", "start,begin,go,play",
+            "AutoBan", "BannedWords", "start",
             "Words that get a player kicked/banned. Comma-separated, case-insensitive."
         );
         AnnounceKick = config.Bind(
