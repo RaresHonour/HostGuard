@@ -9,6 +9,7 @@ public static class ChatPatch
     {
         if (!AmongUsClient.Instance.AmHost) return;
         if (sourcePlayer == null || sourcePlayer.AmOwner) return;
+        if (AmongUsClient.Instance.IsGameStarted) return;
 
         string msg = chatText.ToLower().Trim();
         HostGuardPlugin.Logger.LogInfo($"[HostGuard] Chat from {sourcePlayer.Data.PlayerName} ({sourcePlayer.Data.FriendCode}): {chatText}");
