@@ -11,8 +11,11 @@ public static class ChatPatch
         if (sourcePlayer == null || sourcePlayer.AmOwner) return;
         if (AmongUsClient.Instance.IsGameStarted) return;
 
+        string friendCode = sourcePlayer.Data.FriendCode;
+        if (HostGuardConfig.GetWhitelistedCodes().Contains(friendCode)) return;
+
         string msg = chatText.ToLower().Trim();
-        HostGuardPlugin.Logger.LogInfo($"[HostGuard] Chat from {sourcePlayer.Data.PlayerName} ({sourcePlayer.Data.FriendCode}): {chatText}");
+        HostGuardPlugin.Logger.LogInfo($"[HostGuard] Chat from {sourcePlayer.Data.PlayerName} ({friendCode}): {chatText}");
         List<string> banned = HostGuardConfig.GetBannedWordsList();
 
         bool triggered = HostGuardConfig.ContainsMode.Value
@@ -20,9 +23,6 @@ public static class ChatPatch
             : banned.Contains(msg);
 
         if (!triggered) return;
-
-        string friendCode = sourcePlayer.Data.FriendCode;
-        if (HostGuardConfig.GetWhitelistedCodes().Contains(friendCode)) return;
 
         HostGuardPlugin.Logger.LogWarning($"[HostGuard] Kicked {sourcePlayer.Data.PlayerName} ({friendCode}) for: '{chatText}'");
 

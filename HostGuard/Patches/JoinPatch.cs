@@ -21,7 +21,18 @@ public static class JoinPatch
             return;
         }
 
-        _ = CheckBanListAsync(data, name, code);
+        _ = CheckJoinAsync(data, name, code);
+    }
+
+    static async System.Threading.Tasks.Task CheckJoinAsync(ClientData data, string name, string code)
+    {
+        var banned = await BanListManager.FetchBannedCodesAsync();
+        if (banned.Contains(code))
+        {
+            HostGuardPlugin.Logger.LogWarning($"[HostGuard] Banning {name} ({code}) — found in ban list.");
+            AmongUsClient.Instance.KickPlayer(data.Id, true);
+            return;
+        }
 
         List<string> badWords = HostGuardConfig.GetBadNameWordsList();
         if (badWords.Count > 0)
@@ -30,20 +41,10 @@ public static class JoinPatch
             string? match = badWords.FirstOrDefault(w => lowerName.Contains(w));
             if (match != null)
             {
-                HostGuardPlugin.Logger.LogWarning($"[HostGuard] Kicking {name} ({code}) — bad name: '{match}'");
-                AmongUsClient.Instance.KickPlayer(data.Id, false);
+                bool ban = HostGuardConfig.BanInsteadOfKick.Value;
+                HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — bad name: '{match}'");
+                AmongUsClient.Instance.KickPlayer(data.Id, ban);
             }
-        }
-    }
-
-    static async System.Threading.Tasks.Task CheckBanListAsync(ClientData data, string name, string code)
-    {
-        var banned = await BanListManager.FetchBannedCodesAsync();
-        HostGuardPlugin.Logger.LogInfo($"[HostGuard] Ban list loaded: {banned.Count} codes");
-        if (banned.Contains(code))
-        {
-            HostGuardPlugin.Logger.LogWarning($"[HostGuard] Banning {name} ({code}) — found in ban list.");
-            AmongUsClient.Instance.KickPlayer(data.Id, true);
         }
     }
 }

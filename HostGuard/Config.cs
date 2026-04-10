@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using BepInEx.Configuration;
 
@@ -13,6 +14,13 @@ public static class HostGuardConfig
     public static ConfigEntry<string> WhitelistedCodes = null!;
     public static ConfigEntry<string> BadNameWords = null!;
     public static ConfigEntry<string> BanListUrl = null!;
+
+    private static string _bannedWordsRaw = "";
+    private static List<string> _bannedWordsCache = new();
+    private static string _badNameWordsRaw = "";
+    private static List<string> _badNameWordsCache = new();
+    private static string _whitelistRaw = "";
+    private static HashSet<string> _whitelistCache = new(StringComparer.OrdinalIgnoreCase);
 
     public static void Initialize(ConfigFile config)
     {
@@ -54,11 +62,30 @@ public static class HostGuardConfig
         );
     }
 
-    public static List<string> GetBannedWordsList() =>
-        BannedWords.Value.Split(',').Select(w => w.Trim().ToLower()).Where(w => w.Length > 0).ToList();
+    public static List<string> GetBannedWordsList()
+    {
+        string raw = BannedWords.Value;
+        if (raw != _bannedWordsRaw)
+        {
+            _bannedWordsRaw = raw;
+            _bannedWordsCache = raw.Split(',').Select(w => w.Trim().ToLower()).Where(w => w.Length > 0).ToList();
+        }
+        return _bannedWordsCache;
+    }
 
-    public static List<string> GetWhitelistedCodes() =>
-        WhitelistedCodes.Value.Split(',').Select(w => w.Trim()).Where(w => w.Length > 0).ToList();
+    public static HashSet<string> GetWhitelistedCodes()
+    {
+        string raw = WhitelistedCodes.Value;
+        if (raw != _whitelistRaw)
+        {
+            _whitelistRaw = raw;
+            _whitelistCache = new HashSet<string>(
+                raw.Split(',').Select(w => w.Trim()).Where(w => w.Length > 0),
+                StringComparer.OrdinalIgnoreCase
+            );
+        }
+        return _whitelistCache;
+    }
 
     public static void AddToWhitelist(string friendCode)
     {
@@ -77,6 +104,14 @@ public static class HostGuardConfig
         WhitelistedCodes.Value = string.Join(",", codes);
     }
 
-    public static List<string> GetBadNameWordsList() =>
-        BadNameWords.Value.Split(',').Select(w => w.Trim().ToLower()).Where(w => w.Length > 0).ToList();
+    public static List<string> GetBadNameWordsList()
+    {
+        string raw = BadNameWords.Value;
+        if (raw != _badNameWordsRaw)
+        {
+            _badNameWordsRaw = raw;
+            _badNameWordsCache = raw.Split(',').Select(w => w.Trim().ToLower()).Where(w => w.Length > 0).ToList();
+        }
+        return _badNameWordsCache;
+    }
 }

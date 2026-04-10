@@ -9,14 +9,15 @@ public static class CommandPatch
         if (!sourcePlayer.AmOwner || !AmongUsClient.Instance.AmHost) return;
 
         string msg = chatText.Trim();
+        string lower = msg.ToLower();
 
-        if (msg.StartsWith("!allowcode "))
+        if (lower.StartsWith("!allowcode "))
             HandleAllowCode(msg.Substring("!allowcode ".Length).Trim());
-        else if (msg.StartsWith("!removecode "))
+        else if (lower.StartsWith("!removecode "))
             HandleRemoveCode(msg.Substring("!removecode ".Length).Trim());
-        else if (msg.StartsWith("!allow "))
+        else if (lower.StartsWith("!allow "))
             HandleAllow(msg.Substring("!allow ".Length).Trim());
-        else if (msg.StartsWith("!remove "))
+        else if (lower.StartsWith("!remove "))
             HandleRemove(msg.Substring("!remove ".Length).Trim());
     }
 
