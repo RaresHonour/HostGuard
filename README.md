@@ -7,9 +7,11 @@ A BepInEx/Reactor mod for Among Us that gives hosts better control over their lo
 - **Chat filter** — kick or ban players who type specific words in chat, with optional contains mode
 - **Name filter** — kick players with offensive names on join
 - **Default name detection** — automatically kick players using randomly generated default names (e.g. "Funnybone", "Sillyhawk")
+- **Local blacklist** — permanently ban players by friend code, stored locally
 - **Google Sheets ban list** — hard-ban players by friend code using a shared spreadsheet
 - **Whitelist** — make specific players immune to all checks
-- **Chat commands** — manage settings, kick/ban players, and control filters in real time without leaving the game
+- **Auto-start** — automatically start the game when the lobby reaches a target player count
+- **Chat commands** — manage everything in real time without leaving the game (all commands have short aliases)
 
 ## Requirements
 
@@ -46,6 +48,13 @@ A BepInEx/Reactor mod for Among Us that gives hosts better control over their lo
 | `BanForDefaultName` | `false` | If true, bans instead of kicks for default names. |
 | `StrictDefaultNameCasing` | `true` | If true, only matches exact default casing (e.g. Funnybone). If false, matches any casing. |
 
+### Auto-Start
+
+| Setting | Default | Description |
+|---|---|---|
+| `Enabled` | `false` | If true, auto-starts when the lobby reaches the target player count. |
+| `PlayerCount` | `0` | Target player count. 0 = use the lobby's max player setting. |
+
 ### Other
 
 | Setting | Default | Description |
@@ -57,24 +66,30 @@ A BepInEx/Reactor mod for Among Us that gives hosts better control over their lo
 
 ## Commands
 
-| Command | Description |
-|---|---|
-| `!help` | Show all commands |
-| `!status` | Show current settings |
-| `!kick <name\|code>` | Kick a player by name or friend code |
-| `!ban <name\|code>` | Ban a player by name or friend code |
-| `!defaultnames on/off` | Toggle default name filter |
-| `!defaultnames ban/kick` | Set default name action (ban or kick) |
-| `!badnames on/off` | Toggle ban (vs kick) for bad names |
-| `!badchat on/off` | Toggle ban (vs kick) for banned words in chat |
-| `!contains on/off` | Toggle contains mode for chat filter |
-| `!rules` | Show current rules message |
-| `!setrules <msg>` | Set a new rules message |
-| `!whitelist` | Show all whitelisted friend codes |
-| `!allow <name>` | Whitelist a player currently in the lobby by name |
-| `!remove <name>` | Remove a player from the whitelist by name |
-| `!allowcode <CODE#XXXX>` | Whitelist a friend code directly |
-| `!removecode <CODE#XXXX>` | Remove a friend code from the whitelist |
+All commands support both the full name and a short alias. Use `!help` or `!h` to see the full list in-game.
+
+| Command | Alias | Description |
+|---|---|---|
+| `!kick <name\|code>` | `!k` | Kick a player by name or friend code |
+| `!ban <name\|code>` | `!b` | Ban a player by name or friend code |
+| `!kickall` | `!ka` | Kick all players from the lobby |
+| `!info <name\|code>` | `!i` | Show player info (name, friend code, ID) |
+| `!status` | `!s` | Show all current settings |
+| `!help` | `!h` | Show all commands |
+| `!rules` | `!r` | Show current rules message |
+| `!setrules <msg>` | `!sr` | Set a new rules message |
+| `!autostart on/off/<n>` | `!as` | Toggle auto-start or set player count |
+| `!defaultnames on/off` | `!dn` | Toggle default name filter |
+| `!defaultnames ban/kick` | `!dn` | Set default name action |
+| `!badnames on/off` | `!bn` | Toggle ban (vs kick) for bad names |
+| `!badchat on/off` | `!bc` | Toggle ban (vs kick) for banned words |
+| `!contains on/off` | `!cm` | Toggle contains mode for chat filter |
+| `!whitelist [name\|code]` | `!wl` | View whitelist or add a player |
+| `!unwhitelist <name\|code>` | `!uwl` | Remove from whitelist |
+| `!blacklist [name\|code]` | `!bl` | View blacklist or add a player |
+| `!unblacklist <name\|code>` | `!ubl` | Remove from blacklist |
+
+**Note:** When using a name, the player must be in the lobby. When using a friend code (contains `#`), the player doesn't need to be present.
 
 ## Ban List Setup
 
@@ -82,6 +97,10 @@ A BepInEx/Reactor mod for Among Us that gives hosts better control over their lo
 2. Share it as "Anyone with the link can view"
 3. Get the CSV export URL: `File → Share → Publish to web → CSV`
 4. Paste the URL into `BanListUrl` in the config file
+
+## Blacklist
+
+The local blacklist is stored in `BepInEx/config/hostguard_blacklist.txt` (one friend code per line). Use `!blacklist` / `!bl` commands to manage it in-game, or edit the file directly.
 
 ## License
 

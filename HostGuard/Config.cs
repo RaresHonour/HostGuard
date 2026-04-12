@@ -17,6 +17,10 @@ public static class HostGuardConfig
     public static ConfigEntry<bool> BanForDefaultName = null!;
     public static ConfigEntry<bool> StrictDefaultNameCasing = null!;
 
+    // Autostart
+    public static ConfigEntry<bool> AutoStartEnabled = null!;
+    public static ConfigEntry<int> AutoStartPlayerCount = null!;
+
     // Ban list
     public static ConfigEntry<string> BanListUrl = null!;
 
@@ -70,6 +74,16 @@ public static class HostGuardConfig
         StrictDefaultNameCasing = config.Bind(
             "NameFilter", "StrictDefaultNameCasing", true,
             "If true, only matches exact default name casing (e.g. Funnybone). If false, matches any casing (e.g. FUNNYBONE, funnybone)."
+        );
+
+        // Autostart
+        AutoStartEnabled = config.Bind(
+            "AutoStart", "Enabled", false,
+            "If true, the game will auto-start when the lobby reaches the target player count."
+        );
+        AutoStartPlayerCount = config.Bind(
+            "AutoStart", "PlayerCount", 0,
+            "Number of players needed to auto-start. 0 = use the lobby's max player setting."
         );
 
         // Ban list
@@ -131,11 +145,13 @@ public static class HostGuardConfig
         }
     }
 
-    public static void RemoveFromWhitelist(string friendCode)
+    public static bool RemoveFromWhitelist(string friendCode)
     {
         var codes = GetWhitelistedCodes();
-        if (codes.Remove(friendCode))
-            WhitelistedCodes.Value = string.Join(",", codes);
+        if (!codes.Remove(friendCode))
+            return false;
+        WhitelistedCodes.Value = string.Join(",", codes);
+        return true;
     }
 
     public static List<string> GetBadNameWordsList()

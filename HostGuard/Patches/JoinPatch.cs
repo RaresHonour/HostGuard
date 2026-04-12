@@ -18,6 +18,7 @@ public static class JoinPatch
         if (HostGuardConfig.GetWhitelistedCodes().Contains(code))
         {
             HostGuardPlugin.Logger.LogInfo($"[HostGuard] Whitelist bypass: {name} ({code})");
+            CheckAutoStart();
             return;
         }
 
@@ -28,6 +29,15 @@ public static class JoinPatch
     {
         try
         {
+            // Blacklist check
+            if (Blacklist.Contains(code))
+            {
+                HostGuardPlugin.Logger.LogWarning($"[HostGuard] Kicking {name} ({code}) — found in local blacklist.");
+                AmongUsClient.Instance.KickPlayer(data.Id, true);
+                return;
+            }
+
+            // Ban list check
             var banned = await BanListManager.FetchBannedCodesAsync();
             if (banned.Contains(code))
             {
@@ -36,6 +46,7 @@ public static class JoinPatch
                 return;
             }
 
+            // Bad name check
             List<string> badWords = HostGuardConfig.GetBadNameWordsList();
             if (badWords.Count > 0)
             {
@@ -50,16 +61,47 @@ public static class JoinPatch
                 }
             }
 
+            // Default name check
             if (HostGuardConfig.KickDefaultNames.Value && DefaultNameChecker.IsDefaultName(name))
             {
                 bool ban = HostGuardConfig.BanForDefaultName.Value;
                 HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — default name detected.");
                 AmongUsClient.Instance.KickPlayer(data.Id, ban);
+                return;
             }
+
+            // Player passed all checks — check autostart
+            CheckAutoStart();
         }
         catch (System.Exception ex)
         {
             HostGuardPlugin.Logger.LogError($"[HostGuard] Error checking player {name} ({code}): {ex.Message}");
+        }
+    }
+
+    static void CheckAutoStart()
+    {
+        if (!HostGuardConfig.AutoStartEnabled.Value) return;
+
+        int target = HostGuardConfig.AutoStartPlayerCount.Value;
+        if (target <= 0)
+        {
+            var options = GameOptionsManager.Instance?.CurrentGameOptions;
+            if (options != null)
+                target = options.MaxPlayers;
+            else
+                return;
+        }
+
+        int current = GameData.Instance != null ? GameData.Instance.PlayerCount : 0;
+        if (current >= target)
+        {
+            var gsm = GameStartManager.Instance;
+            if (gsm != null && gsm.countDownTimer > 5f)
+            {
+                HostGuardPlugin.Logger.LogInfo($"[HostGuard] Auto-starting: {current}/{target} players reached.");
+                gsm.countDownTimer = 5f;
+            }
         }
     }
 }

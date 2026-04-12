@@ -31,6 +31,10 @@
             <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\Il2Cppmscorlib.dll</HintPath>
             <Private>false</Private>
         </Reference>
+        <Reference Include="Unity.TextMeshPro">
+            <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\Unity.TextMeshPro.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
     </ItemGroup>
 
     <ItemGroup>
