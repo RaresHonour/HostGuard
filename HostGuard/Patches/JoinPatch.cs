@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using InnerNet;
@@ -26,25 +26,40 @@ public static class JoinPatch
 
     static async System.Threading.Tasks.Task CheckJoinAsync(ClientData data, string name, string code)
     {
-        var banned = await BanListManager.FetchBannedCodesAsync();
-        if (banned.Contains(code))
+        try
         {
-            HostGuardPlugin.Logger.LogWarning($"[HostGuard] Banning {name} ({code}) — found in ban list.");
-            AmongUsClient.Instance.KickPlayer(data.Id, true);
-            return;
-        }
-
-        List<string> badWords = HostGuardConfig.GetBadNameWordsList();
-        if (badWords.Count > 0)
-        {
-            string lowerName = name.ToLower();
-            string? match = badWords.FirstOrDefault(w => lowerName.Contains(w));
-            if (match != null)
+            var banned = await BanListManager.FetchBannedCodesAsync();
+            if (banned.Contains(code))
             {
-                bool ban = HostGuardConfig.BanInsteadOfKick.Value;
-                HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — bad name: '{match}'");
+                HostGuardPlugin.Logger.LogWarning($"[HostGuard] Banning {name} ({code}) — found in ban list.");
+                AmongUsClient.Instance.KickPlayer(data.Id, true);
+                return;
+            }
+
+            List<string> badWords = HostGuardConfig.GetBadNameWordsList();
+            if (badWords.Count > 0)
+            {
+                string lowerName = name.ToLower();
+                string? match = badWords.FirstOrDefault(w => lowerName.Contains(w));
+                if (match != null)
+                {
+                    bool ban = HostGuardConfig.BanForBadName.Value;
+                    HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — bad name: '{match}'");
+                    AmongUsClient.Instance.KickPlayer(data.Id, ban);
+                    return;
+                }
+            }
+
+            if (HostGuardConfig.KickDefaultNames.Value && DefaultNameChecker.IsDefaultName(name))
+            {
+                bool ban = HostGuardConfig.BanForDefaultName.Value;
+                HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — default name detected.");
                 AmongUsClient.Instance.KickPlayer(data.Id, ban);
             }
+        }
+        catch (System.Exception ex)
+        {
+            HostGuardPlugin.Logger.LogError($"[HostGuard] Error checking player {name} ({code}): {ex.Message}");
         }
     }
 }

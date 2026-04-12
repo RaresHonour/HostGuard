@@ -1,11 +1,13 @@
-﻿using BepInEx;
+using BepInEx;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using Reactor;
+using Reactor.Networking.Attributes;
 
-[BepInPlugin("com.rareshonour.hostguard", "HostGuard", "1.2.2")]
+[BepInPlugin("com.rareshonour.hostguard", "HostGuard", "2.0.0")]
 [BepInDependency(ReactorPlugin.Id)]
+[ReactorModFlags(Reactor.Networking.ModFlags.None)]
 public class HostGuardPlugin : BasePlugin
 {
     public static ManualLogSource Logger { get; private set; } = null!;
@@ -17,9 +19,10 @@ public class HostGuardPlugin : BasePlugin
         HostGuardConfig.Initialize(Config);
         _harmony = new Harmony("com.rareshonour.hostguard");
         _harmony.PatchAll();
-        Logger.LogInfo("HostGuard 1.2.2 loaded.");
-        Logger.LogInfo($"[HostGuard] Config: BanInsteadOfKick={HostGuardConfig.BanInsteadOfKick.Value}, ContainsMode={HostGuardConfig.ContainsMode.Value}, AnnounceKick={HostGuardConfig.AnnounceKick.Value}");
-        Logger.LogInfo($"[HostGuard] Config: BannedWords=[{HostGuardConfig.BannedWords.Value}], BadNameWords=[{HostGuardConfig.BadNameWords.Value}]");
-        Logger.LogInfo($"[HostGuard] Config: Whitelist=[{HostGuardConfig.WhitelistedCodes.Value}], BanListUrl={(!string.IsNullOrEmpty(HostGuardConfig.BanListUrl.Value) ? "set" : "not set")}");
+        Logger.LogInfo("HostGuard 2.0.0 loaded.");
+        Logger.LogInfo($"[HostGuard] ChatFilter: Words=[{HostGuardConfig.BannedWords.Value}], Contains={HostGuardConfig.ContainsMode.Value}, Ban={HostGuardConfig.BanForBannedWords.Value}");
+        Logger.LogInfo($"[HostGuard] NameFilter: BadWords=[{HostGuardConfig.BadNameWords.Value}], Ban={HostGuardConfig.BanForBadName.Value}");
+        Logger.LogInfo($"[HostGuard] NameFilter: DefaultNames={HostGuardConfig.KickDefaultNames.Value}, Ban={HostGuardConfig.BanForDefaultName.Value}");
+        Logger.LogInfo($"[HostGuard] Whitelist=[{HostGuardConfig.WhitelistedCodes.Value}], BanList={(!string.IsNullOrEmpty(HostGuardConfig.BanListUrl.Value) ? "set" : "not set")}");
     }
 }

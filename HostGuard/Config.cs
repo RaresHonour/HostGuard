@@ -1,19 +1,30 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using BepInEx.Configuration;
 
 public static class HostGuardConfig
 {
+    // Chat filter
     public static ConfigEntry<string> BannedWords = null!;
-    public static ConfigEntry<bool> AnnounceKick = null!;
-    public static ConfigEntry<bool> BanInsteadOfKick = null!;
+    public static ConfigEntry<bool> ContainsMode = null!;
+    public static ConfigEntry<bool> BanForBannedWords = null!;
+
+    // Name filter
+    public static ConfigEntry<string> BadNameWords = null!;
+    public static ConfigEntry<bool> BanForBadName = null!;
+    public static ConfigEntry<bool> KickDefaultNames = null!;
+    public static ConfigEntry<bool> BanForDefaultName = null!;
+
+    // Ban list
+    public static ConfigEntry<string> BanListUrl = null!;
+
+    // Rules
     public static ConfigEntry<bool> SendRulesOnLobbyStart = null!;
     public static ConfigEntry<string> RulesMessage = null!;
-    public static ConfigEntry<bool> ContainsMode = null!;
+
+    // Whitelist
     public static ConfigEntry<string> WhitelistedCodes = null!;
-    public static ConfigEntry<string> BadNameWords = null!;
-    public static ConfigEntry<string> BanListUrl = null!;
 
     private static string _bannedWordsRaw = "";
     private static List<string> _bannedWordsCache = new();
@@ -24,22 +35,45 @@ public static class HostGuardConfig
 
     public static void Initialize(ConfigFile config)
     {
+        // Chat filter
         BannedWords = config.Bind(
-            "AutoBan", "BannedWords", "start",
+            "ChatFilter", "BannedWords", "start",
             "Words that get a player kicked/banned. Comma-separated, case-insensitive."
         );
-        AnnounceKick = config.Bind(
-            "AutoBan", "AnnounceKick", true,
-            "If true, logs a message when someone gets kicked/banned."
-        );
-        BanInsteadOfKick = config.Bind(
-            "AutoBan", "BanInsteadOfKick", false,
-            "If true: banned (can't rejoin). If false: just kicked (can rejoin)."
-        );
         ContainsMode = config.Bind(
-            "AutoBan", "ContainsMode", false,
+            "ChatFilter", "ContainsMode", false,
             "If true, triggers if message CONTAINS a banned word. If false, only exact matches."
         );
+        BanForBannedWords = config.Bind(
+            "ChatFilter", "BanInsteadOfKick", false,
+            "If true, players saying banned words get banned (can't rejoin). If false, just kicked."
+        );
+
+        // Name filter
+        BadNameWords = config.Bind(
+            "NameFilter", "BadNameWords", "hitler,nigger,nigga,fucker,faggot,retard,kys,chink,spic,wetback,tranny,kike,gook,coon,nonce,pedo,rapist,rape,nazi,kkk,whore,cunt,slut",
+            "If a player's name contains any of these words they get kicked on join. Comma-separated, case-insensitive."
+        );
+        BanForBadName = config.Bind(
+            "NameFilter", "BanForBadName", false,
+            "If true, players with bad names get banned (can't rejoin). If false, just kicked."
+        );
+        KickDefaultNames = config.Bind(
+            "NameFilter", "KickDefaultNames", true,
+            "If true, players with randomly generated default names (e.g. Funnybone) get kicked on join."
+        );
+        BanForDefaultName = config.Bind(
+            "NameFilter", "BanForDefaultName", false,
+            "If true, players with default names get banned (can't rejoin). If false, just kicked."
+        );
+
+        // Ban list
+        BanListUrl = config.Bind(
+            "BanList", "BanListUrl", "",
+            "Google Sheets CSV export URL. Leave empty to disable."
+        );
+
+        // Rules
         SendRulesOnLobbyStart = config.Bind(
             "Rules", "SendRulesOnLobbyStart", true,
             "If true, shows a rules reminder in your local chat when the lobby opens."
@@ -48,18 +82,13 @@ public static class HostGuardConfig
             "Rules", "RulesMessage", "HostGuard active. Typing 'start' or similar words will get you banned.",
             "The rules message shown to you when the lobby opens."
         );
+
+        // Whitelist
         WhitelistedCodes = config.Bind(
             "Whitelist", "WhitelistedCodes", "",
             "Friend codes of players immune to all checks. Managed via !allow and !remove commands. Comma-separated."
         );
-        BadNameWords = config.Bind(
-            "NameFilter", "BadNameWords", "hitler,nigger,nigga,fucker,faggot,retard,kys,chink,spic,wetback,tranny,kike,gook,coon,nonce,pedo,rapist,rape,nazi,kkk,whore,cunt,slut",
-            "If a player's name contains any of these words they get kicked on join. Comma-separated, case-insensitive."
-        );
-        BanListUrl = config.Bind(
-            "BanList", "BanListUrl", "",
-            "Google Sheets CSV export URL. Leave empty to disable."
-        );
+
     }
 
     public static List<string> GetBannedWordsList()
@@ -100,8 +129,8 @@ public static class HostGuardConfig
     public static void RemoveFromWhitelist(string friendCode)
     {
         var codes = GetWhitelistedCodes();
-        codes.Remove(friendCode);
-        WhitelistedCodes.Value = string.Join(",", codes);
+        if (codes.Remove(friendCode))
+            WhitelistedCodes.Value = string.Join(",", codes);
     }
 
     public static List<string> GetBadNameWordsList()

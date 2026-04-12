@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 
@@ -28,6 +28,6 @@ public static class ChatPatch
 
         var client = AmongUsClient.Instance.GetClient(sourcePlayer.OwnerId);
         if (client != null)
-            AmongUsClient.Instance.KickPlayer(client.Id, HostGuardConfig.BanInsteadOfKick.Value);
+            AmongUsClient.Instance.KickPlayer(client.Id, HostGuardConfig.BanForBannedWords.Value);
     }
 }
