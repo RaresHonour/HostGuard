@@ -15,6 +15,7 @@ public static class HostGuardConfig
     public static ConfigEntry<bool> BanForBadName = null!;
     public static ConfigEntry<bool> KickDefaultNames = null!;
     public static ConfigEntry<bool> BanForDefaultName = null!;
+    public static ConfigEntry<bool> StrictDefaultNameCasing = null!;
 
     // Ban list
     public static ConfigEntry<string> BanListUrl = null!;
@@ -65,6 +66,10 @@ public static class HostGuardConfig
         BanForDefaultName = config.Bind(
             "NameFilter", "BanForDefaultName", false,
             "If true, players with default names get banned (can't rejoin). If false, just kicked."
+        );
+        StrictDefaultNameCasing = config.Bind(
+            "NameFilter", "StrictDefaultNameCasing", true,
+            "If true, only matches exact default name casing (e.g. Funnybone). If false, matches any casing (e.g. FUNNYBONE, funnybone)."
         );
 
         // Ban list

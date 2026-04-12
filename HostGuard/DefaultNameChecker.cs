@@ -4,13 +4,17 @@ using System.Linq;
 
 public static class DefaultNameChecker
 {
-    private static readonly HashSet<string> AWords;
-    private static readonly HashSet<string> BWords;
+    private static readonly HashSet<string> AWordsExact;
+    private static readonly HashSet<string> BWordsExact;
+    private static readonly HashSet<string> AWordsIgnoreCase;
+    private static readonly HashSet<string> BWordsIgnoreCase;
 
     static DefaultNameChecker()
     {
-        AWords = new HashSet<string>(AWordsRaw.Split(','), StringComparer.OrdinalIgnoreCase);
-        BWords = new HashSet<string>(BWordsRaw.Split(','), StringComparer.OrdinalIgnoreCase);
+        AWordsExact = new HashSet<string>(AWordsRaw.Split(','));
+        BWordsExact = new HashSet<string>(BWordsRaw.Split(','));
+        AWordsIgnoreCase = new HashSet<string>(AWordsRaw.Split(','), StringComparer.OrdinalIgnoreCase);
+        BWordsIgnoreCase = new HashSet<string>(BWordsRaw.Split(','), StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -20,21 +24,32 @@ public static class DefaultNameChecker
     {
         if (string.IsNullOrEmpty(name) || name.Length < 4) return false;
 
+        bool strict = HostGuardConfig.StrictDefaultNameCasing.Value;
+
+        // In strict mode, default names are always Capitalized (e.g. Funnybone)
+        if (strict && (!char.IsUpper(name[0]) || name.Substring(1) != name.Substring(1).ToLower()))
+            return false;
+
+        // Lowercase for lookup against the word lists (which are stored lowercase)
+        string lower = name.ToLower();
+        var aWords = strict ? AWordsExact : AWordsIgnoreCase;
+        var bWords = strict ? BWordsExact : BWordsIgnoreCase;
+
         // Try AB pattern: A word + B word
-        for (int split = 2; split < name.Length - 1; split++)
+        for (int split = 2; split < lower.Length - 1; split++)
         {
-            string a = name.Substring(0, split);
-            string b = name.Substring(split);
-            if (AWords.Contains(a) && BWords.Contains(b))
+            string a = lower.Substring(0, split);
+            string b = lower.Substring(split);
+            if (aWords.Contains(a) && bWords.Contains(b))
                 return true;
         }
 
         // Try BA pattern: B word + A word
-        for (int split = 2; split < name.Length - 1; split++)
+        for (int split = 2; split < lower.Length - 1; split++)
         {
-            string b = name.Substring(0, split);
-            string a = name.Substring(split);
-            if (BWords.Contains(b) && AWords.Contains(a))
+            string b = lower.Substring(0, split);
+            string a = lower.Substring(split);
+            if (bWords.Contains(b) && aWords.Contains(a))
                 return true;
         }
 

@@ -44,6 +44,7 @@ A BepInEx/Reactor mod for Among Us that gives hosts better control over their lo
 | `BanForBadName` | `false` | If true, bans instead of kicks for bad names. |
 | `KickDefaultNames` | `true` | If true, kicks players with randomly generated default names. |
 | `BanForDefaultName` | `false` | If true, bans instead of kicks for default names. |
+| `StrictDefaultNameCasing` | `true` | If true, only matches exact default casing (e.g. Funnybone). If false, matches any casing. |
 
 ### Other
 
