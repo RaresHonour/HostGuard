@@ -65,10 +65,6 @@ public static class CommandPatch
             SetBool(HostGuardConfig.ContainsMode, true, "Contains mode ON: messages containing a banned word will trigger.");
         else if (lower == "!contains off" || lower == "!cm off")
             SetBool(HostGuardConfig.ContainsMode, false, "Contains mode OFF: only exact matches will trigger.");
-        else if (lower == "!autostart on" || lower == "!as on")
-            SetBool(HostGuardConfig.AutoStartEnabled, true, "Auto-start enabled.");
-        else if (lower == "!autostart off" || lower == "!as off")
-            SetBool(HostGuardConfig.AutoStartEnabled, false, "Auto-start disabled.");
     }
 
     // --- Helpers ---
@@ -315,8 +311,16 @@ public static class CommandPatch
     static void HandleAutoStart(string args)
     {
         string lower = args.ToLower();
-        if (lower == "on" || lower == "off")
-            return; // handled by toggle commands above
+        if (lower == "on")
+        {
+            SetBool(HostGuardConfig.AutoStartEnabled, true, "Auto-start enabled.");
+            return;
+        }
+        if (lower == "off")
+        {
+            SetBool(HostGuardConfig.AutoStartEnabled, false, "Auto-start disabled.");
+            return;
+        }
 
         if (int.TryParse(args, out int count) && count > 0)
         {

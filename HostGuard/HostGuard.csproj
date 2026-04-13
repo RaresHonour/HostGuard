@@ -12,7 +12,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Reactor" Version="*" />
+        <PackageReference Include="Reactor" Version="2.5.0-ci.371" />
 
         <!-- Reference the game's generated interop assemblies -->
         <Reference Include="Assembly-CSharp">

@@ -24,10 +24,11 @@ public static class ChatPatch
 
         if (!triggered) return;
 
-        HostGuardPlugin.Logger.LogWarning($"[HostGuard] Kicked {sourcePlayer.Data.PlayerName} ({friendCode}) for: '{chatText}'");
+        bool ban = HostGuardConfig.BanForBannedWords.Value;
+        HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banned" : "Kicked")} {sourcePlayer.Data.PlayerName} ({friendCode}) for: '{chatText}'");
 
         var client = AmongUsClient.Instance.GetClient(sourcePlayer.OwnerId);
         if (client != null)
-            AmongUsClient.Instance.KickPlayer(client.Id, HostGuardConfig.BanForBannedWords.Value);
+            AmongUsClient.Instance.KickPlayer(client.Id, ban);
     }
 }
