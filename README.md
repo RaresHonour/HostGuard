@@ -1,6 +1,6 @@
 # HostGuard
 
-A BepInEx/Reactor mod for Among Us that gives hosts better control over their lobbies.
+A BepInEx/Reactor mod for Among Us — keyword autoban, default name detection, ban list, whitelist, and more.
 
 ## Features
 
