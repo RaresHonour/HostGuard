@@ -12,6 +12,20 @@ public static class BanListManager
     private static bool _hasFetched;
     private static readonly TimeSpan _cacheTtl = TimeSpan.FromMinutes(5);
 
+    /// <summary>
+    /// Returns the cached ban list without fetching. Safe to call synchronously.
+    /// Call RefreshBanListInBackground() periodically to keep the cache fresh.
+    /// </summary>
+    public static HashSet<string> GetCachedBannedCodes() => _cachedCodes;
+
+    /// <summary>
+    /// Starts a background fetch of the ban list. Does not block.
+    /// </summary>
+    public static void RefreshInBackground()
+    {
+        _ = FetchBannedCodesAsync();
+    }
+
     public static async Task<HashSet<string>> FetchBannedCodesAsync()
     {
         string url = HostGuardConfig.BanListUrl.Value.Trim();

@@ -32,6 +32,10 @@ public static class CommandPatch
         else if (TryGetArgs(lower, msg, "!autostart", "!as", out args))
             HandleAutoStart(args);
         // Exact match commands (no args)
+        else if (Cmd(lower, "!lock", "!lk"))
+            HandleLock();
+        else if (Cmd(lower, "!unlock", "!ulk"))
+            HandleUnlock();
         else if (Cmd(lower, "!whitelist", "!wl"))
             ShowWhitelist();
         else if (Cmd(lower, "!blacklist", "!bl"))
@@ -65,6 +69,40 @@ public static class CommandPatch
             SetBool(HostGuardConfig.ContainsMode, true, "Contains mode ON: messages containing a banned word will trigger.");
         else if (lower == "!contains off" || lower == "!cm off")
             SetBool(HostGuardConfig.ContainsMode, false, "Contains mode OFF: only exact matches will trigger.");
+        // Bot protection toggles
+        else if (lower == "!botnames on" || lower == "!bot on")
+            SetBool(HostGuardConfig.BanKnownBots, true, "Known bots will now be BANNED.");
+        else if (lower == "!botnames off" || lower == "!bot off")
+            SetBool(HostGuardConfig.BanKnownBots, false, "Known bots will now be kicked (not banned).");
+        // Flood protection toggles
+        else if (lower == "!flood on" || lower == "!fp on")
+            SetBool(HostGuardConfig.FloodProtectionEnabled, true, "Flood protection enabled.");
+        else if (lower == "!flood off" || lower == "!fp off")
+            SetBool(HostGuardConfig.FloodProtectionEnabled, false, "Flood protection disabled.");
+        // Anti-cheat toggles
+        else if (lower == "!anticheat on" || lower == "!ac on")
+            SetBool(HostGuardConfig.AntiCheatEnabled, true, "Anti-cheat enabled.");
+        else if (lower == "!anticheat off" || lower == "!ac off")
+            SetBool(HostGuardConfig.AntiCheatEnabled, false, "Anti-cheat disabled.");
+        else if (lower == "!anticheat ban" || lower == "!ac ban")
+            SetBool(HostGuardConfig.BanOnInvalidRpc, true, "Cheaters will now be BANNED.");
+        else if (lower == "!anticheat kick" || lower == "!ac kick")
+            SetBool(HostGuardConfig.BanOnInvalidRpc, false, "Cheaters will now be kicked (not banned).");
+        // Cosmetic detection toggles
+        else if (lower == "!cosmetic on" || lower == "!cos on")
+            SetBool(HostGuardConfig.CosmeticDetectionEnabled, true, "Cosmetic bot detection enabled.");
+        else if (lower == "!cosmetic off" || lower == "!cos off")
+            SetBool(HostGuardConfig.CosmeticDetectionEnabled, false, "Cosmetic bot detection disabled.");
+        // Auto-lock toggles
+        else if (lower == "!autolock on" || lower == "!al on")
+            SetBool(HostGuardConfig.AutoLockOnFlood, true, "Auto-lock on flood enabled.");
+        else if (lower == "!autolock off" || lower == "!al off")
+            SetBool(HostGuardConfig.AutoLockOnFlood, false, "Auto-lock on flood disabled.");
+        // Join notifications toggles
+        else if (lower == "!notify on" || lower == "!n on")
+            SetBool(HostGuardConfig.VerboseJoinNotifications, true, "Verbose join notifications enabled.");
+        else if (lower == "!notify off" || lower == "!n off")
+            SetBool(HostGuardConfig.VerboseJoinNotifications, false, "Verbose join notifications disabled.");
     }
 
     // --- Helpers ---
@@ -105,6 +143,20 @@ public static class CommandPatch
         entry.Value = value;
         HostGuardPlugin.Logger.LogInfo($"[HostGuard] {message}");
         ChatHelper.SendLocalMessage(message);
+    }
+
+    // --- Lobby lock ---
+
+    static void HandleLock()
+    {
+        LobbyLock.Lock();
+        ChatHelper.SendLocalMessage("Lobby locked (set to private).");
+    }
+
+    static void HandleUnlock()
+    {
+        LobbyLock.Unlock();
+        ChatHelper.SendLocalMessage("Lobby unlocked (set to public).");
     }
 
     // --- Manual kick/ban ---
@@ -345,6 +397,13 @@ public static class CommandPatch
             $"Bad name filter: {(HostGuardConfig.GetBadNameWordsList().Count > 0 ? "ON" : "OFF")} ({(HostGuardConfig.BanForBadName.Value ? "ban" : "kick")})\n" +
             $"Chat filter: {(HostGuardConfig.GetBannedWordsList().Count > 0 ? "ON" : "OFF")} ({(HostGuardConfig.BanForBannedWords.Value ? "ban" : "kick")})\n" +
             $"Contains mode: {(HostGuardConfig.ContainsMode.Value ? "ON" : "OFF")}\n" +
+            $"Bot protection: ON ({(HostGuardConfig.BanKnownBots.Value ? "ban" : "kick")})\n" +
+            $"Flood protection: {(HostGuardConfig.FloodProtectionEnabled.Value ? "ON" : "OFF")}\n" +
+            $"Anti-cheat: {(HostGuardConfig.AntiCheatEnabled.Value ? "ON" : "OFF")} ({(HostGuardConfig.BanOnInvalidRpc.Value ? "ban" : "kick")})\n" +
+            $"Cosmetic detection: {(HostGuardConfig.CosmeticDetectionEnabled.Value ? "ON" : "OFF")}\n" +
+            $"Auto-lock on flood: {(HostGuardConfig.AutoLockOnFlood.Value ? "ON" : "OFF")} ({HostGuardConfig.AutoLockDurationSeconds.Value}s)\n" +
+            $"Lobby locked: {(LobbyLock.IsLocked ? "YES" : "no")}\n" +
+            $"Join notifications: {(HostGuardConfig.VerboseJoinNotifications.Value ? "ON" : "OFF")}\n" +
             $"Auto-start: {(HostGuardConfig.AutoStartEnabled.Value ? "ON" : "OFF")} ({autoTarget})\n" +
             $"Ban list: {(!string.IsNullOrEmpty(HostGuardConfig.BanListUrl.Value) ? "set" : "not set")}\n" +
             $"Whitelisted: {HostGuardConfig.GetWhitelistedCodes().Count} players\n" +
@@ -369,6 +428,14 @@ public static class CommandPatch
             "!badnames/!bn on/off\n" +
             "!badchat/!bc on/off\n" +
             "!contains/!cm on/off\n" +
+            "!botnames/!bot on/off - Bot ban/kick\n" +
+            "!flood/!fp on/off - Flood protection\n" +
+            "!anticheat/!ac on/off/ban/kick\n" +
+            "!cosmetic/!cos on/off - Cosmetic detect\n" +
+            "!lock/!lk - Lock lobby (private)\n" +
+            "!unlock/!ulk - Unlock lobby (public)\n" +
+            "!autolock/!al on/off - Auto-lock floods\n" +
+            "!notify/!n on/off - Join notifications\n" +
             "!whitelist/!wl [name|code] - View/add\n" +
             "!unwhitelist/!uwl <name|code>\n" +
             "!blacklist/!bl [name|code] - View/add\n" +

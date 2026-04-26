@@ -31,6 +31,22 @@
             <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\Il2Cppmscorlib.dll</HintPath>
             <Private>false</Private>
         </Reference>
+        <Reference Include="Hazel">
+            <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\Hazel.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+<Reference Include="UnityEngine.UI">
+            <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\UnityEngine.UI.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="UnityEngine.InputLegacyModule">
+            <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\UnityEngine.InputLegacyModule.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="UnityEngine.Physics2DModule">
+            <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\UnityEngine.Physics2DModule.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
         <Reference Include="Unity.TextMeshPro">
             <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\Unity.TextMeshPro.dll</HintPath>
             <Private>false</Private>
@@ -39,6 +55,8 @@
 
     <ItemGroup>
       <Folder Include="Patches\" />
+      <Folder Include="UI\" />
+      <Folder Include="Presets\" />
     </ItemGroup>
 
 </Project>

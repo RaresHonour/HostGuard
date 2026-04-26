@@ -10,11 +10,31 @@ public static class JoinPatch
     {
         if (!AmongUsClient.Instance.AmHost || data == null) return;
 
+        LobbyLock.CheckAutoUnlock();
+
         string name = data.PlayerName;
         string code = data.FriendCode;
 
         HostGuardPlugin.Logger.LogInfo($"[HostGuard] Player joined: {name} ({code}) [ID: {data.Id}]");
 
+        // No friend code = guest/bot
+        if (string.IsNullOrEmpty(code) || !code.Contains('#'))
+        {
+            HostGuardPlugin.Logger.LogWarning($"[HostGuard] Banning {name} — no friend code.");
+            ChatHelper.SendLocalMessage($"[Bot] Banned {name} — no friend code.");
+            AmongUsClient.Instance.KickPlayer(data.Id, true);
+            return;
+        }
+
+        // Session blacklist
+        if (FloodGuard.IsSessionBanned(code))
+        {
+            HostGuardPlugin.Logger.LogWarning($"[HostGuard] Banning {name} ({code}) — session blacklisted.");
+            AmongUsClient.Instance.KickPlayer(data.Id, true);
+            return;
+        }
+
+        // Whitelist bypass
         if (HostGuardConfig.GetWhitelistedCodes().Contains(code))
         {
             HostGuardPlugin.Logger.LogInfo($"[HostGuard] Whitelist bypass: {name} ({code})");
@@ -22,61 +42,70 @@ public static class JoinPatch
             return;
         }
 
-        _ = CheckJoinAsync(data, name, code);
-    }
-
-    static async System.Threading.Tasks.Task CheckJoinAsync(ClientData data, string name, string code)
-    {
-        try
+        // Known bot name check
+        var botNames = HostGuardConfig.GetKnownBotNamesList();
+        if (botNames.Any(b => string.Equals(b, name, System.StringComparison.OrdinalIgnoreCase)))
         {
-            // Blacklist check
-            if (Blacklist.Contains(code))
-            {
-                HostGuardPlugin.Logger.LogWarning($"[HostGuard] Kicking {name} ({code}) — found in local blacklist.");
-                AmongUsClient.Instance.KickPlayer(data.Id, true);
-                return;
-            }
+            bool ban = HostGuardConfig.BanKnownBots.Value;
+            HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — known bot name.");
+            ChatHelper.SendLocalMessage($"[Bot] {(ban ? "Banned" : "Kicked")} known bot: {name}");
+            AmongUsClient.Instance.KickPlayer(data.Id, ban);
+            return;
+        }
 
-            // Ban list check
-            var banned = await BanListManager.FetchBannedCodesAsync();
-            if (banned.Contains(code))
-            {
-                HostGuardPlugin.Logger.LogWarning($"[HostGuard] Banning {name} ({code}) — found in ban list.");
-                AmongUsClient.Instance.KickPlayer(data.Id, true);
-                return;
-            }
+        // Flood protection
+        if (HostGuardConfig.FloodProtectionEnabled.Value && FloodGuard.ShouldBlockJoin(data.Id))
+        {
+            HostGuardPlugin.Logger.LogWarning($"[HostGuard] Banning {name} ({code}) — flood protection triggered.");
+            ChatHelper.SendLocalMessage($"[Flood] Banned {name} — flood attack.");
+            FloodGuard.SessionBan(code);
+            AmongUsClient.Instance.KickPlayer(data.Id, true);
+            return;
+        }
 
-            // Bad name check
-            List<string> badWords = HostGuardConfig.GetBadNameWordsList();
-            if (badWords.Count > 0)
-            {
-                string lowerName = name.ToLower();
-                string? match = badWords.FirstOrDefault(w => lowerName.Contains(w));
-                if (match != null)
-                {
-                    bool ban = HostGuardConfig.BanForBadName.Value;
-                    HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — bad name: '{match}'");
-                    AmongUsClient.Instance.KickPlayer(data.Id, ban);
-                    return;
-                }
-            }
+        // Blacklist check (synchronous — no async!)
+        if (Blacklist.Contains(code))
+        {
+            HostGuardPlugin.Logger.LogWarning($"[HostGuard] Banning {name} ({code}) — found in local blacklist.");
+            AmongUsClient.Instance.KickPlayer(data.Id, true);
+            return;
+        }
 
-            // Default name check
-            if (HostGuardConfig.KickDefaultNames.Value && DefaultNameChecker.IsDefaultName(name))
+        // Ban list check (synchronous — use cached data, don't await)
+        var banned = BanListManager.GetCachedBannedCodes();
+        if (banned != null && banned.Contains(code))
+        {
+            HostGuardPlugin.Logger.LogWarning($"[HostGuard] Banning {name} ({code}) — found in ban list.");
+            AmongUsClient.Instance.KickPlayer(data.Id, true);
+            return;
+        }
+
+        // Bad name check
+        List<string> badWords = HostGuardConfig.GetBadNameWordsList();
+        if (badWords.Count > 0)
+        {
+            string lowerName = name.ToLower();
+            string? match = badWords.FirstOrDefault(w => lowerName.Contains(w));
+            if (match != null)
             {
-                bool ban = HostGuardConfig.BanForDefaultName.Value;
-                HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — default name detected.");
+                bool ban = HostGuardConfig.BanForBadName.Value;
+                HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — bad name: '{match}'");
                 AmongUsClient.Instance.KickPlayer(data.Id, ban);
                 return;
             }
+        }
 
-            // Player passed all checks — check autostart
-            CheckAutoStart();
-        }
-        catch (System.Exception ex)
+        // Default name check
+        if (HostGuardConfig.KickDefaultNames.Value && DefaultNameChecker.IsDefaultName(name))
         {
-            HostGuardPlugin.Logger.LogError($"[HostGuard] Error checking player {name} ({code}): {ex.Message}");
+            bool ban = HostGuardConfig.BanForDefaultName.Value;
+            HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — default name detected.");
+            AmongUsClient.Instance.KickPlayer(data.Id, ban);
+            return;
         }
+
+        // Player passed all checks
+        CheckAutoStart();
     }
 
     static void CheckAutoStart()

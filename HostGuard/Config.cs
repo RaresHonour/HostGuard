@@ -31,12 +31,50 @@ public static class HostGuardConfig
     // Whitelist
     public static ConfigEntry<string> WhitelistedCodes = null!;
 
+    // Bot protection
+    public static ConfigEntry<string> KnownBotNames = null!;
+    public static ConfigEntry<bool> BanKnownBots = null!;
+    public static ConfigEntry<string> KnownBotUrls = null!;
+
+    // Flood protection
+    public static ConfigEntry<bool> FloodProtectionEnabled = null!;
+    public static ConfigEntry<int> FloodJoinThreshold = null!;
+    public static ConfigEntry<int> FloodJoinWindowSeconds = null!;
+    public static ConfigEntry<int> RapidLeaveThreshold = null!;
+    public static ConfigEntry<bool> MeetingSpamKick = null!;
+    public static ConfigEntry<int> MeetingSpamThreshold = null!;
+    public static ConfigEntry<int> MeetingSpamWindowSeconds = null!;
+
+    // Anti-cheat
+    public static ConfigEntry<bool> AntiCheatEnabled = null!;
+    public static ConfigEntry<bool> BanOnInvalidRpc = null!;
+    public static ConfigEntry<int> ChatRateLimit = null!;
+    public static ConfigEntry<int> ChatRateLimitWindowSeconds = null!;
+
+    // Cosmetic detection
+    public static ConfigEntry<bool> CosmeticDetectionEnabled = null!;
+    public static ConfigEntry<string> SuspiciousColorIds = null!;
+    public static ConfigEntry<bool> BanForSuspiciousCosmetics = null!;
+
+    // Lobby lock
+    public static ConfigEntry<bool> AutoLockOnFlood = null!;
+    public static ConfigEntry<int> AutoLockDurationSeconds = null!;
+
+    // Join notifications
+    public static ConfigEntry<bool> VerboseJoinNotifications = null!;
+
     private static string _bannedWordsRaw = "";
     private static List<string> _bannedWordsCache = new();
     private static string _badNameWordsRaw = "";
     private static List<string> _badNameWordsCache = new();
     private static string _whitelistRaw = "";
     private static HashSet<string> _whitelistCache = new(StringComparer.OrdinalIgnoreCase);
+    private static string _knownBotNamesRaw = "";
+    private static List<string> _knownBotNamesCache = new();
+    private static string _knownBotUrlsRaw = "";
+    private static List<string> _knownBotUrlsCache = new();
+    private static string _suspiciousColorsRaw = "";
+    private static HashSet<int> _suspiciousColorsCache = new();
 
     public static void Initialize(ConfigFile config)
     {
@@ -108,6 +146,98 @@ public static class HostGuardConfig
             "Friend codes of players immune to all checks. Managed via !allow and !remove commands. Comma-separated."
         );
 
+        // Bot protection
+        KnownBotNames = config.Bind(
+            "BotProtection", "KnownBotNames", "TNT,auser,Haunt Bot",
+            "Known bot names to auto-kick/ban on join. Comma-separated, case-insensitive exact match."
+        );
+        BanKnownBots = config.Bind(
+            "BotProtection", "BanKnownBots", true,
+            "If true, known bots get banned (can't rejoin). If false, just kicked."
+        );
+        KnownBotUrls = config.Bind(
+            "BotProtection", "KnownBotUrls", "tntaddict,ntadd,matchducking",
+            "Keywords to detect bot URLs in chat. Bots use commas instead of dots (e.g. tntaddict,net). Comma-separated."
+        );
+
+        // Flood protection
+        FloodProtectionEnabled = config.Bind(
+            "FloodProtection", "Enabled", true,
+            "If true, enables flood protection (rapid join detection, rapid leave detection)."
+        );
+        FloodJoinThreshold = config.Bind(
+            "FloodProtection", "FloodJoinThreshold", 5,
+            "Number of joins within the time window to trigger flood protection."
+        );
+        FloodJoinWindowSeconds = config.Bind(
+            "FloodProtection", "FloodJoinWindowSeconds", 3,
+            "Time window in seconds for join flood detection."
+        );
+        RapidLeaveThreshold = config.Bind(
+            "FloodProtection", "RapidLeaveThreshold", 3,
+            "Number of rapid join-and-leave events within 10 seconds to trigger lockdown."
+        );
+        MeetingSpamKick = config.Bind(
+            "FloodProtection", "MeetingSpamKick", true,
+            "If true, players who spam meetings get kicked."
+        );
+        MeetingSpamThreshold = config.Bind(
+            "FloodProtection", "MeetingSpamThreshold", 2,
+            "Number of meetings within the time window to trigger meeting spam kick."
+        );
+        MeetingSpamWindowSeconds = config.Bind(
+            "FloodProtection", "MeetingSpamWindowSeconds", 15,
+            "Time window in seconds for meeting spam detection."
+        );
+
+        // Anti-cheat
+        AntiCheatEnabled = config.Bind(
+            "AntiCheat", "Enabled", true,
+            "If true, validates RPCs and blocks unauthorized game actions (kill exploits, vent abuse, etc.)."
+        );
+        BanOnInvalidRpc = config.Bind(
+            "AntiCheat", "BanOnInvalidRpc", true,
+            "If true, players sending invalid RPCs get banned. If false, just kicked."
+        );
+        ChatRateLimit = config.Bind(
+            "AntiCheat", "ChatRateLimit", 5,
+            "Maximum chat messages allowed per rate limit window."
+        );
+        ChatRateLimitWindowSeconds = config.Bind(
+            "AntiCheat", "ChatRateLimitWindowSeconds", 3,
+            "Time window in seconds for chat rate limiting."
+        );
+
+        // Cosmetic detection
+        CosmeticDetectionEnabled = config.Bind(
+            "BotProtection", "CosmeticDetectionEnabled", false,
+            "If true, players matching known bot cosmetic profiles (e.g. Red color) get kicked. Disabled by default to avoid false positives."
+        );
+        SuspiciousColorIds = config.Bind(
+            "BotProtection", "SuspiciousColorIds", "0",
+            "Color IDs that trigger cosmetic detection when combined with a known bot name. 0=Red. Comma-separated."
+        );
+        BanForSuspiciousCosmetics = config.Bind(
+            "BotProtection", "BanForSuspiciousCosmetics", false,
+            "If true, players matching suspicious cosmetic profiles get banned. If false, just kicked."
+        );
+
+        // Lobby lock
+        AutoLockOnFlood = config.Bind(
+            "FloodProtection", "AutoLockOnFlood", true,
+            "If true, automatically sets the lobby to private when a flood attack is detected."
+        );
+        AutoLockDurationSeconds = config.Bind(
+            "FloodProtection", "AutoLockDurationSeconds", 30,
+            "How long (in seconds) the lobby stays locked after an auto-lock. 0 = stay locked until manual !unlock."
+        );
+
+        // Join notifications
+        VerboseJoinNotifications = config.Bind(
+            "Notifications", "VerboseJoinNotifications", true,
+            "If true, shows detailed player info in host chat when a player joins (level, color, friend code, etc.)."
+        );
+
     }
 
     public static List<string> GetBannedWordsList()
@@ -163,5 +293,94 @@ public static class HostGuardConfig
             _badNameWordsCache = raw.Split(',').Select(w => w.Trim().ToLower()).Where(w => w.Length > 0).ToList();
         }
         return _badNameWordsCache;
+    }
+
+    public static List<string> GetKnownBotNamesList()
+    {
+        string raw = KnownBotNames.Value;
+        if (raw != _knownBotNamesRaw)
+        {
+            _knownBotNamesRaw = raw;
+            _knownBotNamesCache = raw.Split(',').Select(w => w.Trim()).Where(w => w.Length > 0).ToList();
+        }
+        return _knownBotNamesCache;
+    }
+
+    public static List<string> GetKnownBotUrlsList()
+    {
+        string raw = KnownBotUrls.Value;
+        if (raw != _knownBotUrlsRaw)
+        {
+            _knownBotUrlsRaw = raw;
+            _knownBotUrlsCache = raw.Split(',').Select(w => w.Trim().ToLower()).Where(w => w.Length > 0).ToList();
+        }
+        return _knownBotUrlsCache;
+    }
+
+    public static List<(string Category, string Label, object Entry, System.Type ValueType)> GetAllEntries()
+    {
+        return new List<(string, string, object, System.Type)>
+        {
+            // Name Filter
+            ("Name Filter", "Kick Default Names", KickDefaultNames, typeof(bool)),
+            ("Name Filter", "Ban Default Names", BanForDefaultName, typeof(bool)),
+            ("Name Filter", "Strict Casing", StrictDefaultNameCasing, typeof(bool)),
+            ("Name Filter", "Ban Bad Names", BanForBadName, typeof(bool)),
+            ("Name Filter", "Bad Name Words", BadNameWords, typeof(string)),
+
+            // Chat Filter
+            ("Chat Filter", "Ban for Banned Words", BanForBannedWords, typeof(bool)),
+            ("Chat Filter", "Contains Mode", ContainsMode, typeof(bool)),
+            ("Chat Filter", "Banned Words", BannedWords, typeof(string)),
+
+            // Bot Protection
+            ("Bot Protection", "Ban Known Bots", BanKnownBots, typeof(bool)),
+            ("Bot Protection", "Cosmetic Detection", CosmeticDetectionEnabled, typeof(bool)),
+            ("Bot Protection", "Ban Suspicious Cosmetics", BanForSuspiciousCosmetics, typeof(bool)),
+            ("Bot Protection", "Known Bot Names", KnownBotNames, typeof(string)),
+            ("Bot Protection", "Known Bot URLs", KnownBotUrls, typeof(string)),
+            ("Bot Protection", "Suspicious Color IDs", SuspiciousColorIds, typeof(string)),
+
+            // Flood Protection
+            ("Flood Protection", "Enabled", FloodProtectionEnabled, typeof(bool)),
+            ("Flood Protection", "Meeting Spam Kick", MeetingSpamKick, typeof(bool)),
+            ("Flood Protection", "Auto-Lock on Flood", AutoLockOnFlood, typeof(bool)),
+            ("Flood Protection", "Join Threshold", FloodJoinThreshold, typeof(int)),
+            ("Flood Protection", "Join Window (sec)", FloodJoinWindowSeconds, typeof(int)),
+            ("Flood Protection", "Rapid Leave Threshold", RapidLeaveThreshold, typeof(int)),
+            ("Flood Protection", "Meeting Spam Threshold", MeetingSpamThreshold, typeof(int)),
+            ("Flood Protection", "Meeting Window (sec)", MeetingSpamWindowSeconds, typeof(int)),
+            ("Flood Protection", "Auto-Lock Duration (sec)", AutoLockDurationSeconds, typeof(int)),
+
+            // Anti-Cheat
+            ("Anti-Cheat", "Enabled", AntiCheatEnabled, typeof(bool)),
+            ("Anti-Cheat", "Ban on Invalid RPC", BanOnInvalidRpc, typeof(bool)),
+            ("Anti-Cheat", "Chat Rate Limit", ChatRateLimit, typeof(int)),
+            ("Anti-Cheat", "Rate Limit Window (sec)", ChatRateLimitWindowSeconds, typeof(int)),
+
+            // General
+            ("General", "Auto-Start", AutoStartEnabled, typeof(bool)),
+            ("General", "Auto-Start Players", AutoStartPlayerCount, typeof(int)),
+            ("General", "Send Rules on Start", SendRulesOnLobbyStart, typeof(bool)),
+            ("General", "Join Notifications", VerboseJoinNotifications, typeof(bool)),
+            ("General", "Rules Message", RulesMessage, typeof(string)),
+            ("General", "Ban List URL", BanListUrl, typeof(string)),
+        };
+    }
+
+    public static HashSet<int> GetSuspiciousColorIds()
+    {
+        string raw = SuspiciousColorIds.Value;
+        if (raw != _suspiciousColorsRaw)
+        {
+            _suspiciousColorsRaw = raw;
+            _suspiciousColorsCache = new HashSet<int>(
+                raw.Split(',')
+                   .Select(w => w.Trim())
+                   .Where(w => int.TryParse(w, out _))
+                   .Select(w => int.Parse(w))
+            );
+        }
+        return _suspiciousColorsCache;
     }
 }
