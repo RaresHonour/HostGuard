@@ -14,8 +14,10 @@ public static class HostGuardUI
     private static GameObject? _rowsContainer;
     private static GameObject? _presetsContainer;
     private static readonly List<Action> _refreshCbs = new();
-    private static int _presetNum = 1;
+    private static int _configPresetNum = 1;
+    private static int _gamePresetNum = 1;
     private static bool _settingsTab = true;
+    private static bool _gamePresetsMode = false;
 
     // Scroll state
     private static float _scrollY = 0f;
@@ -32,6 +34,8 @@ public static class HostGuardUI
     private static readonly Color BtnGreen = new(0.2f, 0.6f, 0.2f, 1f);
     private static readonly Color HdrColor = new(0.9f, 0.9f, 0.25f, 1f);
     private static readonly Color Dim = new(0.45f, 0.45f, 0.45f, 1f);
+    private static readonly Color SubTabActive = new(0.15f, 0.45f, 0.6f, 1f);
+    private static readonly Color SubTabInactive = new(0.2f, 0.2f, 0.23f, 1f);
 
     private static float _camLeft, _camRight, _camTop, _camBot;
     private static bool _camReady;
@@ -229,7 +233,7 @@ public static class HostGuardUI
     {
         _settingsTab = settings;
         if (_rowsContainer != null) _rowsContainer.SetActive(settings);
-        if (_presetsContainer != null) { _presetsContainer.SetActive(!settings); if (!settings) RefreshPresets(); }
+        if (_presetsContainer != null) { _presetsContainer.SetActive(!settings); if (!settings) BuildPresets(); }
         UpdateTabVisual("Tab_Settings", settings);
         UpdateTabVisual("Tab_Presets", !settings);
     }
@@ -479,44 +483,113 @@ public static class HostGuardUI
     private static void BuildPresets()
     {
         if (_presetsContainer == null) return;
-        var saveObj = MakeLabel(_presetsContainer.transform, "[ Save Settings ]",
-            new Vector3(_panelCX, _contentTop, -100f), 1.5f, Color.green, TextAlignmentOptions.Center, 501);
-        saveObj.AddComponent<BoxCollider2D>().size = new Vector2(1.5f, 0.25f);
+
+        // Clear all children
+        for (int i = _presetsContainer.transform.childCount - 1; i >= 0; i--)
+            Object.Destroy(_presetsContainer.transform.GetChild(i).gameObject);
+
+        float y = _contentTop;
+
+        // Sub-tab buttons: Config | Game
+        float stW = _panelW * 0.3f;
+
+        var configTab = new GameObject("PSub_Config");
+        configTab.transform.SetParent(_presetsContainer.transform);
+        configTab.transform.localPosition = new Vector3(_panelCX - _panelW * 0.17f, y, -100f);
+        configTab.transform.localScale = Vector3.one;
+        MakeBg(configTab.transform, Vector3.zero, stW, 0.22f, !_gamePresetsMode ? SubTabActive : SubTabInactive, 501);
+        MakeLabel(configTab.transform, "Config", Vector3.zero, 1.2f, Color.white, TextAlignmentOptions.Center, 502);
+        configTab.AddComponent<BoxCollider2D>().size = new Vector2(stW, 0.22f);
+        AddButton(configTab).OnClick.AddListener((Action)(() => { _gamePresetsMode = false; BuildPresets(); }));
+
+        var gameTab = new GameObject("PSub_Game");
+        gameTab.transform.SetParent(_presetsContainer.transform);
+        gameTab.transform.localPosition = new Vector3(_panelCX + _panelW * 0.17f, y, -100f);
+        gameTab.transform.localScale = Vector3.one;
+        MakeBg(gameTab.transform, Vector3.zero, stW, 0.22f, _gamePresetsMode ? SubTabActive : SubTabInactive, 501);
+        MakeLabel(gameTab.transform, "Game", Vector3.zero, 1.2f, Color.white, TextAlignmentOptions.Center, 502);
+        gameTab.AddComponent<BoxCollider2D>().size = new Vector2(stW, 0.22f);
+        AddButton(gameTab).OnClick.AddListener((Action)(() => { _gamePresetsMode = true; BuildPresets(); }));
+
+        y -= 0.38f;
+
+        // Save button
+        string saveLabel = _gamePresetsMode ? "[ Save Game Settings ]" : "[ Save Config ]";
+        var saveObj = MakeLabel(_presetsContainer.transform, saveLabel,
+            new Vector3(_panelCX, y, -100f), 1.3f, Color.green, TextAlignmentOptions.Center, 501);
+        saveObj.AddComponent<BoxCollider2D>().size = new Vector2(1.8f, 0.25f);
         AddButton(saveObj).OnClick.AddListener((Action)(() =>
         {
-            PresetManager.SavePreset("Preset " + _presetNum++);
-            RefreshPresets();
-        }));
-    }
-
-    private static void RefreshPresets()
-    {
-        if (_presetsContainer == null) return;
-        for (int i = _presetsContainer.transform.childCount - 1; i >= 1; i--)
-            Object.Destroy(_presetsContainer.transform.GetChild(i).gameObject);
-        var presets = PresetManager.GetPresetNames();
-        float y = _contentTop - 0.35f;
-        foreach (var pr in presets)
-        {
-            string n = pr;
-            MakeLabel(_presetsContainer.transform, n, new Vector3(_panelLeft + 0.15f, y, -100f),
-                1.1f, Color.white, TextAlignmentOptions.Left, 501);
-            var loadObj = MakeLabel(_presetsContainer.transform, "Load",
-                new Vector3(_panelCX + _panelW * 0.2f, y, -100f), 1.0f, Color.green, TextAlignmentOptions.Center, 501);
-            loadObj.AddComponent<BoxCollider2D>().size = new Vector2(0.5f, 0.2f);
-            AddButton(loadObj).OnClick.AddListener((Action)(() =>
+            if (_gamePresetsMode)
             {
-                if (PresetManager.LoadPreset(n)) RebuildSettings();
-            }));
-            var delObj = MakeLabel(_presetsContainer.transform, "X",
-                new Vector3(_panelCX + _panelW * 0.4f, y, -100f), 1.0f, Palette.ImpostorRed, TextAlignmentOptions.Center, 501);
-            delObj.AddComponent<BoxCollider2D>().size = new Vector2(0.25f, 0.2f);
-            AddButton(delObj).OnClick.AddListener((Action)(() => { PresetManager.DeletePreset(n); RefreshPresets(); }));
-            y -= 0.28f;
-        }
+                if (GamePresetManager.SavePreset("Game " + _gamePresetNum++))
+                    ChatHelper.SendLocalMessage("Game settings saved.");
+                else
+                    ChatHelper.SendLocalMessage("Could not save — game options not available.");
+            }
+            else
+            {
+                PresetManager.SavePreset("Config " + _configPresetNum++);
+                ChatHelper.SendLocalMessage("Config preset saved.");
+            }
+            BuildPresets();
+        }));
+
+        y -= 0.38f;
+
+        // Preset list
+        var presets = _gamePresetsMode ? GamePresetManager.GetPresetNames() : PresetManager.GetPresetNames();
+
         if (presets.Count == 0)
+        {
             MakeLabel(_presetsContainer.transform, "No presets yet.",
-                new Vector3(_panelCX, _contentTop - 0.5f, -100f), 1.2f, Dim, TextAlignmentOptions.Center, 501);
+                new Vector3(_panelCX, y, -100f), 1.2f, Dim, TextAlignmentOptions.Center, 501);
+        }
+        else
+        {
+            for (int idx = 0; idx < presets.Count; idx++)
+            {
+                string n = presets[idx];
+                MakeLabel(_presetsContainer.transform, n, new Vector3(_panelLeft + 0.15f, y, -100f),
+                    1.1f, Color.white, TextAlignmentOptions.Left, 501);
+
+                var loadObj = MakeLabel(_presetsContainer.transform, "Load",
+                    new Vector3(_panelCX + _panelW * 0.2f, y, -100f), 1.0f, Color.green, TextAlignmentOptions.Center, 501);
+                loadObj.AddComponent<BoxCollider2D>().size = new Vector2(0.5f, 0.2f);
+                AddButton(loadObj).OnClick.AddListener((Action)(() =>
+                {
+                    if (_gamePresetsMode)
+                    {
+                        if (GamePresetManager.LoadPreset(n))
+                            ChatHelper.SendLocalMessage($"Game preset '{n}' loaded.");
+                        else
+                            ChatHelper.SendLocalMessage("Could not load — game options not available.");
+                    }
+                    else
+                    {
+                        if (PresetManager.LoadPreset(n))
+                        {
+                            RebuildSettings();
+                            ChatHelper.SendLocalMessage($"Config preset '{n}' loaded.");
+                        }
+                    }
+                }));
+
+                var delObj = MakeLabel(_presetsContainer.transform, "X",
+                    new Vector3(_panelCX + _panelW * 0.4f, y, -100f), 1.0f, Palette.ImpostorRed, TextAlignmentOptions.Center, 501);
+                delObj.AddComponent<BoxCollider2D>().size = new Vector2(0.25f, 0.2f);
+                AddButton(delObj).OnClick.AddListener((Action)(() =>
+                {
+                    if (_gamePresetsMode)
+                        GamePresetManager.DeletePreset(n);
+                    else
+                        PresetManager.DeletePreset(n);
+                    BuildPresets();
+                }));
+
+                y -= 0.28f;
+            }
+        }
     }
 
     // ==================== PRIMITIVES ====================

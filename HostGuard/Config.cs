@@ -333,6 +333,46 @@ public static class HostGuardConfig
         return _badNameWordsCache;
     }
 
+    public static bool AddBannedWord(string word)
+    {
+        string lower = word.Trim().ToLower();
+        if (lower.Length == 0) return false;
+        var words = GetBannedWordsList();
+        if (words.Contains(lower)) return false;
+        words.Add(lower);
+        BannedWords.Value = string.Join(",", words);
+        return true;
+    }
+
+    public static bool RemoveBannedWord(string word)
+    {
+        string lower = word.Trim().ToLower();
+        var words = GetBannedWordsList();
+        if (!words.Remove(lower)) return false;
+        BannedWords.Value = string.Join(",", words);
+        return true;
+    }
+
+    public static bool AddBadNameWord(string word)
+    {
+        string lower = word.Trim().ToLower();
+        if (lower.Length == 0) return false;
+        var words = GetBadNameWordsList();
+        if (words.Contains(lower)) return false;
+        words.Add(lower);
+        BadNameWords.Value = string.Join(",", words);
+        return true;
+    }
+
+    public static bool RemoveBadNameWord(string word)
+    {
+        string lower = word.Trim().ToLower();
+        var words = GetBadNameWordsList();
+        if (!words.Remove(lower)) return false;
+        BadNameWords.Value = string.Join(",", words);
+        return true;
+    }
+
     public static List<string> GetKnownBotNamesList()
     {
         string raw = KnownBotNames.Value;

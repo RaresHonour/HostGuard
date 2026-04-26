@@ -31,6 +31,14 @@ public static class CommandPatch
             SetRules(args);
         else if (TryGetArgs(lower, msg, "!autostart", "!as", out args))
             HandleAutoStart(args);
+        else if (TryGetArgs(lower, msg, "!addword", "!aw", out args))
+            HandleAddWord(args);
+        else if (TryGetArgs(lower, msg, "!removeword", "!rw", out args))
+            HandleRemoveWord(args);
+        else if (TryGetArgs(lower, msg, "!addname", "!an", out args))
+            HandleAddName(args);
+        else if (TryGetArgs(lower, msg, "!removename", "!rn", out args))
+            HandleRemoveName(args);
         // Exact match commands (no args)
         else if (Cmd(lower, "!lock", "!lk"))
             HandleLock();
@@ -48,6 +56,10 @@ public static class CommandPatch
             ShowHelp();
         else if (Cmd(lower, "!rules", "!r"))
             ShowRules();
+        else if (Cmd(lower, "!words", "!wds"))
+            ShowWords();
+        else if (Cmd(lower, "!namelist", "!nl"))
+            ShowNameList();
         // Toggle commands
         else if (lower == "!defaultnames on" || lower == "!dn on")
             SetBool(HostGuardConfig.KickDefaultNames, true, "Default name filter enabled.");
@@ -386,6 +398,62 @@ public static class CommandPatch
         }
     }
 
+    // --- Word management ---
+
+    static void HandleAddWord(string word)
+    {
+        if (HostGuardConfig.AddBannedWord(word))
+            ChatHelper.SendLocalMessage($"Added '{word}' to banned words.");
+        else
+            ChatHelper.SendLocalMessage($"'{word}' is already in banned words.");
+    }
+
+    static void HandleRemoveWord(string word)
+    {
+        if (HostGuardConfig.RemoveBannedWord(word))
+            ChatHelper.SendLocalMessage($"Removed '{word}' from banned words.");
+        else
+            ChatHelper.SendLocalMessage($"'{word}' not found in banned words.");
+    }
+
+    static void HandleAddName(string word)
+    {
+        if (HostGuardConfig.AddBadNameWord(word))
+            ChatHelper.SendLocalMessage($"Added '{word}' to bad name words.");
+        else
+            ChatHelper.SendLocalMessage($"'{word}' is already in bad name words.");
+    }
+
+    static void HandleRemoveName(string word)
+    {
+        if (HostGuardConfig.RemoveBadNameWord(word))
+            ChatHelper.SendLocalMessage($"Removed '{word}' from bad name words.");
+        else
+            ChatHelper.SendLocalMessage($"'{word}' not found in bad name words.");
+    }
+
+    static void ShowWords()
+    {
+        var words = HostGuardConfig.GetBannedWordsList();
+        if (words.Count == 0)
+        {
+            ChatHelper.SendLocalMessage("Banned words list is empty.");
+            return;
+        }
+        ChatHelper.SendLocalMessage($"[Banned Words ({words.Count})]\n{string.Join(", ", words)}");
+    }
+
+    static void ShowNameList()
+    {
+        var words = HostGuardConfig.GetBadNameWordsList();
+        if (words.Count == 0)
+        {
+            ChatHelper.SendLocalMessage("Bad name words list is empty.");
+            return;
+        }
+        ChatHelper.SendLocalMessage($"[Bad Name Words ({words.Count})]\n{string.Join(", ", words)}");
+    }
+
     // --- Status ---
 
     static void ShowStatus()
@@ -439,7 +507,13 @@ public static class CommandPatch
             "!whitelist/!wl [name|code] - View/add\n" +
             "!unwhitelist/!uwl <name|code>\n" +
             "!blacklist/!bl [name|code] - View/add\n" +
-            "!unblacklist/!ubl <name|code>";
+            "!unblacklist/!ubl <name|code>\n" +
+            "!addword/!aw <word> - Add banned word\n" +
+            "!removeword/!rw <word> - Remove word\n" +
+            "!words/!wds - List banned words\n" +
+            "!addname/!an <word> - Add bad name word\n" +
+            "!removename/!rn <word> - Remove name\n" +
+            "!namelist/!nl - List bad name words";
         ChatHelper.SendLocalMessage(help);
     }
 }
