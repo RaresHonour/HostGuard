@@ -70,11 +70,15 @@ public static class PresetManager
                 values[key] = val;
             }
 
+            // Fields to skip when loading presets (managed separately)
+            var skipFields = new HashSet<string> { "WhitelistedCodes" };
+
             foreach (var field in typeof(HostGuardConfig).GetFields(BindingFlags.Public | BindingFlags.Static))
             {
                 if (!field.FieldType.IsGenericType) continue;
                 if (field.FieldType.GetGenericTypeDefinition() != typeof(ConfigEntry<>)) continue;
                 if (!values.TryGetValue(field.Name, out var strVal)) continue;
+                if (skipFields.Contains(field.Name)) continue;
 
                 var entry = field.GetValue(null);
                 if (entry == null) continue;
@@ -91,10 +95,10 @@ public static class PresetManager
                     parsed = strVal;
 
                 valueProp?.SetValue(entry, parsed);
+                HostGuardPlugin.Logger.LogInfo($"[HostGuard] Preset set {field.Name} = {parsed}");
             }
 
             HostGuardPlugin.Logger.LogInfo($"[HostGuard] Preset loaded: {name}");
-            HostGuardSettingsPanel.RefreshAll();
             return true;
         }
         catch (Exception ex)

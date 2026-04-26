@@ -17,9 +17,9 @@ public static class ChatPatch
         string msg = chatText.ToLower().Trim();
         HostGuardPlugin.Logger.LogInfo($"[HostGuard] Chat from {sourcePlayer.Data.PlayerName} ({friendCode}): {chatText}");
 
-        // Bot URL check (always ban)
+        // Bot URL check (gated by BotProtection master toggle, always ban)
         var botUrls = HostGuardConfig.GetKnownBotUrlsList();
-        if (botUrls.Any(u => msg.Contains(u)))
+        if (HostGuardConfig.BotProtectionEnabled.Value && botUrls.Any(u => msg.Contains(u)))
         {
             HostGuardPlugin.Logger.LogWarning($"[HostGuard] Banned {sourcePlayer.Data.PlayerName} ({friendCode}) — bot URL detected: '{chatText}'");
             var urlClient = AmongUsClient.Instance.GetClient(sourcePlayer.OwnerId);
@@ -31,7 +31,8 @@ public static class ChatPatch
             return;
         }
 
-        // Banned words check
+        // Banned words check (gated by ChatFilter master toggle)
+        if (!HostGuardConfig.ChatFilterEnabled.Value) return;
         List<string> banned = HostGuardConfig.GetBannedWordsList();
 
         bool triggered = HostGuardConfig.ContainsMode.Value

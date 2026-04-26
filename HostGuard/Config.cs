@@ -5,6 +5,11 @@ using BepInEx.Configuration;
 
 public static class HostGuardConfig
 {
+    // Section master toggles
+    public static ConfigEntry<bool> NameFilterEnabled = null!;
+    public static ConfigEntry<bool> ChatFilterEnabled = null!;
+    public static ConfigEntry<bool> BotProtectionEnabled = null!;
+
     // Chat filter
     public static ConfigEntry<string> BannedWords = null!;
     public static ConfigEntry<bool> ContainsMode = null!;
@@ -63,6 +68,11 @@ public static class HostGuardConfig
     // Join notifications
     public static ConfigEntry<bool> VerboseJoinNotifications = null!;
 
+    // Minimum level
+    public static ConfigEntry<bool> MinLevelEnabled = null!;
+    public static ConfigEntry<int> MinLevel = null!;
+    public static ConfigEntry<bool> BanForLowLevel = null!;
+
     private static string _bannedWordsRaw = "";
     private static List<string> _bannedWordsCache = new();
     private static string _badNameWordsRaw = "";
@@ -78,6 +88,20 @@ public static class HostGuardConfig
 
     public static void Initialize(ConfigFile config)
     {
+        // Section master toggles
+        NameFilterEnabled = config.Bind(
+            "NameFilter", "Enabled", true,
+            "Master toggle for name filtering (bad names, default names). Does not change individual settings."
+        );
+        ChatFilterEnabled = config.Bind(
+            "ChatFilter", "Enabled", true,
+            "Master toggle for chat word filtering. Does not change individual settings."
+        );
+        BotProtectionEnabled = config.Bind(
+            "BotProtection", "Enabled", true,
+            "Master toggle for bot protection (known bot names, cosmetic detection). Does not change individual settings."
+        );
+
         // Chat filter
         BannedWords = config.Bind(
             "ChatFilter", "BannedWords", "start",
@@ -236,6 +260,20 @@ public static class HostGuardConfig
         VerboseJoinNotifications = config.Bind(
             "Notifications", "VerboseJoinNotifications", true,
             "If true, shows detailed player info in host chat when a player joins (level, color, friend code, etc.)."
+        );
+
+        // Minimum level
+        MinLevelEnabled = config.Bind(
+            "MinLevel", "Enabled", false,
+            "If true, players below the minimum level get kicked/banned on join."
+        );
+        MinLevel = config.Bind(
+            "MinLevel", "MinLevel", 5,
+            "Minimum player level required to join. Players below this get kicked/banned."
+        );
+        BanForLowLevel = config.Bind(
+            "MinLevel", "BanForLowLevel", false,
+            "If true, low-level players get banned. If false, just kicked."
         );
 
     }

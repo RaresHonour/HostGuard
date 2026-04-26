@@ -1,0 +1,242 @@
+using System.Collections.Generic;
+using System.Linq;
+using HarmonyLib;
+using InnerNet;
+
+[HarmonyPatch(typeof(AmongUsClient), nameof(AmongUsClient.OnPlayerJoined))]
+public static class JoinPatch
+{
+    static void Postfix(ClientData data)
+    {
+        if (!AmongUsClient.Instance.AmHost || data == null) return;
+
+        // Check auto-unlock timer on each join event
+        LobbyLock.CheckAutoUnlock();
+
+        string name = data.PlayerName;
+        string code = data.FriendCode;
+
+        // Log ALL available data about the joining player to crash log
+        // This data is available BEFORE CreatePlayer runs — our window to act
+        float level = 0;
+        string puid = "";
+        try { level = data.PlayerLevel; } catch { }
+        try { puid = data.ProductUserId ?? ""; } catch { }
+
+        HostGuardPlugin.Logger.LogInfo($"[HostGuard] Player joined: {name} ({code}) [ID: {data.Id}] Level={level} PUID={puid}");
+        CrashLog.Write($"[Join] {name} ({code}) [ID: {data.Id}] Level={level} PUID={puid}");
+
+        // Kick players with no friend code immediately — these are guest/bot accounts
+        if (string.IsNullOrEmpty(code) || !code.Contains('#'))
+        {
+            HostGuardPlugin.Logger.LogWarning($"[HostGuard] Banning {name} — no friend code (likely bot/guest).");
+            ChatHelper.SendLocalMessage($"[Bot] Banned {name} — no friend code.");
+            AmongUsClient.Instance.KickPlayer(data.Id, true);
+            return;
+        }
+
+        // Session blacklist — players banned during this session (from flood attacks etc.)
+        if (FloodGuard.IsSessionBanned(code))
+        {
+            HostGuardPlugin.Logger.LogWarning($"[HostGuard] Banning {name} ({code}) — session blacklisted.");
+            AmongUsClient.Instance.KickPlayer(data.Id, true);
+            return;
+        }
+
+        if (HostGuardConfig.GetWhitelistedCodes().Contains(code))
+        {
+            HostGuardPlugin.Logger.LogInfo($"[HostGuard] Whitelist bypass: {name} ({code})");
+            CheckAutoStart();
+            return;
+        }
+
+        // Known bot name check (synchronous — kick immediately before they can act)
+        var botNames = HostGuardConfig.GetKnownBotNamesList();
+        if (botNames.Any(b => string.Equals(b, name, System.StringComparison.OrdinalIgnoreCase)))
+        {
+            bool ban = HostGuardConfig.BanKnownBots.Value;
+            HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — known bot name.");
+            ChatHelper.SendLocalMessage($"[Bot] {(ban ? "Banned" : "Kicked")} known bot: {name}");
+            AmongUsClient.Instance.KickPlayer(data.Id, ban);
+            return;
+        }
+
+        // Flood protection check — BAN (not kick) and add to session blacklist
+        if (HostGuardConfig.FloodProtectionEnabled.Value && FloodGuard.ShouldBlockJoin(data.Id))
+        {
+            HostGuardPlugin.Logger.LogWarning($"[HostGuard] Banning {name} ({code}) — flood protection triggered.");
+            ChatHelper.SendLocalMessage($"[Flood] Banned {name} — flood attack.");
+            FloodGuard.SessionBan(code);
+            AmongUsClient.Instance.KickPlayer(data.Id, true);
+            return;
+        }
+
+        _ = CheckJoinAsync(data, name, code);
+    }
+
+    static async System.Threading.Tasks.Task CheckJoinAsync(ClientData data, string name, string code)
+    {
+        try
+        {
+            // Blacklist check
+            if (Blacklist.Contains(code))
+            {
+                HostGuardPlugin.Logger.LogWarning($"[HostGuard] Kicking {name} ({code}) — found in local blacklist.");
+                AmongUsClient.Instance.KickPlayer(data.Id, true);
+                return;
+            }
+
+            // Ban list check
+            var banned = await BanListManager.FetchBannedCodesAsync();
+            if (banned.Contains(code))
+            {
+                HostGuardPlugin.Logger.LogWarning($"[HostGuard] Banning {name} ({code}) — found in ban list.");
+                AmongUsClient.Instance.KickPlayer(data.Id, true);
+                return;
+            }
+
+            // Bad name check
+            List<string> badWords = HostGuardConfig.GetBadNameWordsList();
+            if (badWords.Count > 0)
+            {
+                string lowerName = name.ToLower();
+                string? match = badWords.FirstOrDefault(w => lowerName.Contains(w));
+                if (match != null)
+                {
+                    bool ban = HostGuardConfig.BanForBadName.Value;
+                    HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — bad name: '{match}'");
+                    AmongUsClient.Instance.KickPlayer(data.Id, ban);
+                    return;
+                }
+            }
+
+            // Default name check
+            if (HostGuardConfig.KickDefaultNames.Value && DefaultNameChecker.IsDefaultName(name))
+            {
+                bool ban = HostGuardConfig.BanForDefaultName.Value;
+                HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — default name detected.");
+                AmongUsClient.Instance.KickPlayer(data.Id, ban);
+                return;
+            }
+
+            // Cosmetic detection (check if player matches known bot appearance)
+            if (HostGuardConfig.CosmeticDetectionEnabled.Value)
+            {
+                try
+                {
+                    var player = FindPlayerByClientId(data.Id);
+                    if (player?.Data != null)
+                    {
+                        var outfit = player.Data.DefaultOutfit;
+                        if (outfit != null)
+                        {
+                            int colorId = outfit.ColorId;
+                            var suspiciousColors = HostGuardConfig.GetSuspiciousColorIds();
+                            var botNamesList = HostGuardConfig.GetKnownBotNamesList();
+
+                            if (suspiciousColors.Contains(colorId) && botNamesList.Any(b =>
+                                name.ToLower().Contains(b.ToLower())))
+                            {
+                                bool ban = HostGuardConfig.BanForSuspiciousCosmetics.Value;
+                                HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — suspicious cosmetic profile (color {colorId}).");
+                                ChatHelper.SendLocalMessage($"[Bot] {(ban ? "Banned" : "Kicked")} {name} — suspicious cosmetics.");
+                                AmongUsClient.Instance.KickPlayer(data.Id, ban);
+                                return;
+                            }
+                        }
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    HostGuardPlugin.Logger.LogError($"[HostGuard] Error in cosmetic detection: {ex.Message}");
+                }
+            }
+
+            // Verbose join notification
+            if (HostGuardConfig.VerboseJoinNotifications.Value)
+            {
+                SendJoinNotification(data);
+            }
+
+            // Player passed all checks — check autostart
+            CheckAutoStart();
+        }
+        catch (System.Exception ex)
+        {
+            HostGuardPlugin.Logger.LogError($"[HostGuard] Error checking player {name} ({code}): {ex.Message}");
+        }
+    }
+
+    static readonly string[] ColorNames = { "Red", "Blue", "Green", "Pink", "Orange", "Yellow",
+        "Black", "White", "Purple", "Brown", "Cyan", "Lime", "Maroon", "Rose", "Banana", "Gray",
+        "Tan", "Coral", "Fortegreen" };
+
+    static PlayerControl FindPlayerByClientId(int clientId)
+    {
+        try
+        {
+            foreach (var p in PlayerControl.AllPlayerControls)
+                if (p != null && p.OwnerId == clientId) return p;
+        }
+        catch { }
+        return null;
+    }
+
+    static void SendJoinNotification(ClientData data)
+    {
+        try
+        {
+            var player = FindPlayerByClientId(data.Id);
+            string colorName = "?";
+            int level = 0;
+
+            if (player?.Data != null)
+            {
+                try
+                {
+                    var outfit = player.Data.DefaultOutfit;
+                    if (outfit != null)
+                    {
+                        int colorId = outfit.ColorId;
+                        colorName = colorId >= 0 && colorId < ColorNames.Length ? ColorNames[colorId] : $"#{colorId}";
+                    }
+                }
+                catch { }
+                try { level = (int)player.Data.PlayerLevel + 1; } catch { }
+            }
+
+            string msg = $"[Join] {data.PlayerName} | {data.FriendCode} | Lvl {level} | {colorName}";
+            ChatHelper.SendLocalMessage(msg);
+        }
+        catch (System.Exception ex)
+        {
+            HostGuardPlugin.Logger.LogError($"[HostGuard] Error in join notification: {ex.Message}");
+        }
+    }
+
+    static void CheckAutoStart()
+    {
+        if (!HostGuardConfig.AutoStartEnabled.Value) return;
+
+        int target = HostGuardConfig.AutoStartPlayerCount.Value;
+        if (target <= 0)
+        {
+            var options = GameOptionsManager.Instance?.CurrentGameOptions;
+            if (options != null)
+                target = options.MaxPlayers;
+            else
+                return;
+        }
+
+        int current = GameData.Instance != null ? GameData.Instance.PlayerCount : 0;
+        if (current >= target)
+        {
+            var gsm = GameStartManager.Instance;
+            if (gsm != null && gsm.countDownTimer > 5f)
+            {
+                HostGuardPlugin.Logger.LogInfo($"[HostGuard] Auto-starting: {current}/{target} players reached.");
+                gsm.countDownTimer = 5f;
+            }
+        }
+    }
+}

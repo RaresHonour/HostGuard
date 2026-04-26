@@ -14,8 +14,10 @@ public static class JoinPatch
 
         string name = data.PlayerName;
         string code = data.FriendCode;
+        float level = 0;
+        try { level = data.PlayerLevel; } catch { }
 
-        HostGuardPlugin.Logger.LogInfo($"[HostGuard] Player joined: {name} ({code}) [ID: {data.Id}]");
+        HostGuardPlugin.Logger.LogInfo($"[HostGuard] Player joined: {name} ({code}) [ID: {data.Id}] Level={level}");
 
         // No friend code = guest/bot
         if (string.IsNullOrEmpty(code) || !code.Contains('#'))
@@ -42,9 +44,9 @@ public static class JoinPatch
             return;
         }
 
-        // Known bot name check
+        // Known bot name check (gated by BotProtection master toggle)
         var botNames = HostGuardConfig.GetKnownBotNamesList();
-        if (botNames.Any(b => string.Equals(b, name, System.StringComparison.OrdinalIgnoreCase)))
+        if (HostGuardConfig.BotProtectionEnabled.Value && botNames.Any(b => string.Equals(b, name, System.StringComparison.OrdinalIgnoreCase)))
         {
             bool ban = HostGuardConfig.BanKnownBots.Value;
             HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — known bot name.");
@@ -80,9 +82,9 @@ public static class JoinPatch
             return;
         }
 
-        // Bad name check
+        // Bad name check (gated by NameFilter master toggle)
         List<string> badWords = HostGuardConfig.GetBadNameWordsList();
-        if (badWords.Count > 0)
+        if (HostGuardConfig.NameFilterEnabled.Value && badWords.Count > 0)
         {
             string lowerName = name.ToLower();
             string? match = badWords.FirstOrDefault(w => lowerName.Contains(w));
@@ -95,13 +97,27 @@ public static class JoinPatch
             }
         }
 
-        // Default name check
-        if (HostGuardConfig.KickDefaultNames.Value && DefaultNameChecker.IsDefaultName(name))
+        // Default name check (gated by NameFilter master toggle)
+        if (HostGuardConfig.NameFilterEnabled.Value && HostGuardConfig.KickDefaultNames.Value && DefaultNameChecker.IsDefaultName(name))
         {
             bool ban = HostGuardConfig.BanForDefaultName.Value;
             HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — default name detected.");
             AmongUsClient.Instance.KickPlayer(data.Id, ban);
             return;
+        }
+
+        // Minimum level check
+        if (HostGuardConfig.MinLevelEnabled.Value)
+        {
+            int minLvl = HostGuardConfig.MinLevel.Value;
+            if (level < minLvl)
+            {
+                bool ban = HostGuardConfig.BanForLowLevel.Value;
+                HostGuardPlugin.Logger.LogWarning($"[HostGuard] {(ban ? "Banning" : "Kicking")} {name} ({code}) — level {level} below minimum {minLvl}.");
+                ChatHelper.SendLocalMessage($"[Level] {(ban ? "Banned" : "Kicked")} {name} — level {level} < {minLvl}");
+                AmongUsClient.Instance.KickPlayer(data.Id, ban);
+                return;
+            }
         }
 
         // Player passed all checks
