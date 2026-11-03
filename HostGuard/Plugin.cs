@@ -5,7 +5,7 @@ using HarmonyLib;
 using Reactor;
 using Reactor.Networking.Attributes;
 
-[BepInPlugin("com.rareshonour.hostguard", "HostGuard", "3.2.0")]
+[BepInPlugin("com.rareshonour.hostguard", "HostGuard", "3.2.1")]
 [BepInDependency(ReactorPlugin.Id)]
 [ReactorModFlags(Reactor.Networking.ModFlags.None)]
 public class HostGuardPlugin : BasePlugin
@@ -23,10 +23,10 @@ public class HostGuardPlugin : BasePlugin
 
         Reactor.Patches.ReactorVersionShower.TextUpdated += (text) =>
         {
-            text.text += "\nHostGuard 3.2.0";
+            text.text += "\nHostGuard 3.2.1";
         };
 
-        Logger.LogInfo("HostGuard 3.2.0 loaded.");
+        Logger.LogInfo("HostGuard 3.2.1 loaded.");
         Logger.LogInfo($"[HostGuard] ChatFilter: ExactWords=[{HostGuardConfig.BannedWords.Value}], ContainsWords=[{HostGuardConfig.BannedWordsContains.Value}], Ban={HostGuardConfig.BanForBannedWords.Value}");
         Logger.LogInfo($"[HostGuard] NameFilter: BadWords=[{HostGuardConfig.BadNameWords.Value}], Ban={HostGuardConfig.BanForBadName.Value}");
         Logger.LogInfo($"[HostGuard] NameFilter: DefaultNames={HostGuardConfig.KickDefaultNames.Value}, Ban={HostGuardConfig.BanForDefaultName.Value}");

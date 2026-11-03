@@ -57,9 +57,9 @@ A BepInEx/Reactor mod for Among Us that protects lobbies from bots, cheaters, an
 
 ## Requirements
 
-- Among Us (Steam) v2026.3.31
-- [BepInEx 6.0.0-be.755 (IL2CPP x86)](https://builds.bepinex.dev/projects/bepinex_be)
-- [Reactor 2.5.0](https://github.com/NuclearPowered/Reactor/releases)
+- Among Us (Steam) v2026.9.29+
+- [BepInEx 6.0.0-be.791 (IL2CPP x64)](https://builds.bepinex.dev/projects/bepinex_be/791/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.791%2Bb782da4.zip)
+- [Reactor 2.5.1+](https://github.com/NuclearPowered/Reactor/releases)
 
 ## Installation
 

@@ -56,9 +56,9 @@ A BepInEx/Reactor mod for Among Us that gives hosts full control over their lobb
 
 ## Requirements
 
-- Among Us (Steam) v2024.11.26+
-- [BepInEx 6.0.0-be.755 (IL2CPP x86)](https://builds.bepinex.dev/projects/bepinex_be/755/BepInEx-Unity.IL2CPP-win-x86-6.0.0-be.755%2B3fab71a.zip)
-- [Reactor 2.5.0](https://github.com/NuclearPowered/Reactor/releases/tag/2.5.0)
+- Among Us (Steam) v2026.9.29+
+- [BepInEx 6.0.0-be.791 (IL2CPP x64)](https://builds.bepinex.dev/projects/bepinex_be/791/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.791%2Bb782da4.zip)
+- [Reactor 2.5.1+](https://github.com/NuclearPowered/Reactor/releases)
 
 ## Installation
 
@@ -67,7 +67,7 @@ A BepInEx/Reactor mod for Among Us that gives hosts full control over their lobb
 3. Launch Among Us once so BepInEx sets itself up, then close it
 4. Download `Reactor.dll` from the Reactor releases page and drop it into `BepInEx/plugins/`
 5. Download `HostGuard.dll` from the [latest release](https://github.com/RaresHonour/HostGuard/releases/latest) and drop it into `BepInEx/plugins/`
-6. Launch Among Us — you should see "HostGuard 3.2.0" on the main menu
+6. Launch Among Us — you should see "HostGuard 3.2.1" on the main menu
 
 Most settings can be changed in-game using the **HostGuard** button in the lobby. You can also edit `BepInEx/config/com.rareshonour.hostguard.cfg` directly.
 
