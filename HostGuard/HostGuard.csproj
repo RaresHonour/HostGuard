@@ -6,8 +6,9 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <AssemblyName>HostGuard</AssemblyName>
 
-        <!-- UPDATE THIS to your Among Us folder path -->
-        <OutputPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\plugins\</OutputPath>
+        <!-- Among Us installation directory (override with -p:AmongUsDir="...") -->
+        <AmongUsDir Condition="'$(AmongUsDir)' == ''">D:\SteamLibrary\steamapps\common\Among Us</AmongUsDir>
+        <OutputPath>$(AmongUsDir)\BepInEx\plugins\</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     </PropertyGroup>
 
@@ -17,39 +18,39 @@
 
         <!-- Reference the game's generated interop assemblies -->
         <Reference Include="Assembly-CSharp">
-            <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\Assembly-CSharp.dll</HintPath>
+            <HintPath>$(AmongUsDir)\BepInEx\interop\Assembly-CSharp.dll</HintPath>
             <Private>false</Private>
         </Reference>
         <Reference Include="Assembly-CSharp-firstpass">
-            <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\Assembly-CSharp-firstpass.dll</HintPath>
+            <HintPath>$(AmongUsDir)\BepInEx\interop\Assembly-CSharp-firstpass.dll</HintPath>
             <Private>false</Private>
         </Reference>
         <Reference Include="UnityEngine.CoreModule">
-            <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\UnityEngine.CoreModule.dll</HintPath>
+            <HintPath>$(AmongUsDir)\BepInEx\interop\UnityEngine.CoreModule.dll</HintPath>
             <Private>false</Private>
         </Reference>
         <Reference Include="Il2Cppmscorlib">
-            <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\Il2Cppmscorlib.dll</HintPath>
+            <HintPath>$(AmongUsDir)\BepInEx\interop\Il2Cppmscorlib.dll</HintPath>
             <Private>false</Private>
         </Reference>
         <Reference Include="Hazel">
-            <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\Hazel.dll</HintPath>
+            <HintPath>$(AmongUsDir)\BepInEx\interop\Hazel.dll</HintPath>
             <Private>false</Private>
         </Reference>
-<Reference Include="UnityEngine.UI">
-            <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\UnityEngine.UI.dll</HintPath>
+        <Reference Include="UnityEngine.UI">
+            <HintPath>$(AmongUsDir)\BepInEx\interop\UnityEngine.UI.dll</HintPath>
             <Private>false</Private>
         </Reference>
         <Reference Include="UnityEngine.InputLegacyModule">
-            <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\UnityEngine.InputLegacyModule.dll</HintPath>
+            <HintPath>$(AmongUsDir)\BepInEx\interop\UnityEngine.InputLegacyModule.dll</HintPath>
             <Private>false</Private>
         </Reference>
         <Reference Include="UnityEngine.Physics2DModule">
-            <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\UnityEngine.Physics2DModule.dll</HintPath>
+            <HintPath>$(AmongUsDir)\BepInEx\interop\UnityEngine.Physics2DModule.dll</HintPath>
             <Private>false</Private>
         </Reference>
         <Reference Include="Unity.TextMeshPro">
-            <HintPath>D:\SteamLibrary\steamapps\common\Among Us\BepInEx\interop\Unity.TextMeshPro.dll</HintPath>
+            <HintPath>$(AmongUsDir)\BepInEx\interop\Unity.TextMeshPro.dll</HintPath>
             <Private>false</Private>
         </Reference>
     </ItemGroup>

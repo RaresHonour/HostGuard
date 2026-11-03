@@ -6,7 +6,7 @@ using Object = UnityEngine.Object;
 
 public static class UIFactory
 {
-    private static ToggleButtonBehaviour _toggleTemplate;
+    private static ToggleButtonBehaviour _toggleTemplate = null!;
     private static bool _initialized;
 
     public static void Init(OptionsMenuBehaviour optionsMenu)

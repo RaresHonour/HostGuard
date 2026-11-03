@@ -92,7 +92,7 @@ public static class CommandPatch
 
     static bool IsFriendCode(string input) => input.Contains('#');
 
-    static PlayerControl FindPlayer(string identifier)
+    static PlayerControl? FindPlayer(string identifier)
     {
         if (IsFriendCode(identifier))
             return PlayerControl.AllPlayerControls.ToArray()

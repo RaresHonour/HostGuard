@@ -88,7 +88,7 @@ public static class GamePresetManager
                 values[line.Substring(0, eq).Trim()] = line.Substring(eq + 1).Trim();
             }
 
-            string v;
+            string? v;
             if (values.TryGetValue("PlayerSpeedMod", out v)) try { opts.PlayerSpeedMod = float.Parse(v, CultureInfo.InvariantCulture); } catch { }
             if (values.TryGetValue("KillCooldown", out v)) try { opts.KillCooldown = float.Parse(v, CultureInfo.InvariantCulture); } catch { }
             if (values.TryGetValue("CrewLightMod", out v)) try { opts.CrewLightMod = float.Parse(v, CultureInfo.InvariantCulture); } catch { }
