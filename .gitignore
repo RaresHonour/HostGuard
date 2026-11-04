@@ -13,8 +13,6 @@
 
 # IDE and workspace settings
 .idea/
-.claude/
-.aider*
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
