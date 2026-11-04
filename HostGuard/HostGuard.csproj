@@ -55,10 +55,4 @@
         </Reference>
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Patches\" />
-      <Folder Include="UI\" />
-      <Folder Include="Presets\" />
-    </ItemGroup>
-
 </Project>

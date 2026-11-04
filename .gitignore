@@ -11,11 +11,10 @@
 *.sln.docstates
 *.env
 
-# JetBrains Rider
+# IDE and workspace settings
 .idea/
-
-# Claude Code
 .claude/
+.aider*
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -422,4 +421,3 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
-.aider*
